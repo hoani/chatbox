@@ -75,6 +75,17 @@ func main() {
 		panic(err)
 	}
 
+	hsvs := []hal.HSV{}
+	for i := 0; i < 24; i++ {
+		hsvs = append(hsvs, hal.HSV{
+			H: uint8(i) * 10,
+			S: 0xFF,
+			V: 0x80,
+		})
+	}
+
+	h.Leds().HSV(0, hsvs...)
+
 	req := openai.ChatCompletionRequest{
 		Model: openai.GPT3Dot5Turbo,
 		Messages: []openai.ChatCompletionMessage{

@@ -5,28 +5,24 @@ import (
 	"sync"
 )
 
-type hal struct {
-	button     bool
-	buttonLock sync.Mutex
+type button struct {
+	value bool
+	lock  sync.Mutex
 }
 
-func newHal() (*hal, error) {
-	h := &hal{
-		button: false,
-	}
+func (b *button) start() {
 	go func() {
 		for {
 			fmt.Scanln()
-			h.buttonLock.Lock()
-			h.button = !h.button
-			h.buttonLock.Unlock()
+			b.lock.Lock()
+			b.value = !b.value
+			b.lock.Unlock()
 		}
 	}()
-	return h, nil
 }
 
-func (h *hal) Button() bool {
-	h.buttonLock.Lock()
-	defer h.buttonLock.Unlock()
-	return h.button
+func (b *button) get() bool {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	return b.value
 }
