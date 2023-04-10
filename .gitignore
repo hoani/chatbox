@@ -4,6 +4,10 @@
 *.dll
 *.so
 *.dylib
+chatbox
+
+# generated files
+*.wav
 
 # Test binary, built with `go test -c`
 *.test
