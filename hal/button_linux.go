@@ -23,5 +23,5 @@ func newHal() (*hal, error) {
 }
 
 func (h *hal) Button() bool {
-	return h.Read() == rpio.Low // Note: reverse polarity, High means unpressed.
+	return h.button.Read() == rpio.Low // Note: reverse polarity, High means unpressed.
 }
