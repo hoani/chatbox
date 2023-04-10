@@ -85,6 +85,7 @@ func main() {
 	}
 
 	h.Leds().HSV(0, hsvs...)
+	h.Leds().Show()
 
 	req := openai.ChatCompletionRequest{
 		Model: openai.GPT3Dot5Turbo,
