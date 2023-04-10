@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"sync"
 	"time"
+	"path/filepath"
 
 	"github.com/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
@@ -15,6 +16,8 @@ import (
 )
 
 var h hal.Hal
+
+var wd string
 
 func getRecording(c *openai.Client) string {
 	m, err := toot.NewDefaultMicrophone()
@@ -25,7 +28,8 @@ func getRecording(c *openai.Client) string {
 
 	fmt.Printf("%#v\n", m.DeviceInfo())
 
-	f, err := os.Create("test.wav")
+	path := filepath.Join(wd, "test.wav")
+	f, err := os.Create(path)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -49,7 +53,7 @@ func getRecording(c *openai.Client) string {
 			time.Sleep(200 * time.Millisecond)
 			break
 		}
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(time.Millisecond)
 	}
 	m.Close()
 	fmt.Printf("\033[2K\r")
@@ -59,9 +63,10 @@ func getRecording(c *openai.Client) string {
 		context.Background(),
 		openai.AudioRequest{
 			Model:    openai.Whisper1,
-			FilePath: "test.wav",
+			FilePath: path,
 		})
 	if err != nil {
+		fmt.Printf("%v\n", err)
 		panic(err)
 	}
 	return resp.Text
@@ -72,6 +77,11 @@ func main() {
 
 	var err error
 	if h, err = hal.NewHal(); err != nil {
+		panic(err)
+	}
+
+	wd, err = os.Getwd()
+	if err != nil {
 		panic(err)
 	}
 
@@ -109,7 +119,10 @@ func main() {
 			time.Sleep(20 * time.Millisecond)
 		}
 
+		h.LCD().Write("Listening...", "release to stop", &hal.RGB{200,205,0})
+
 		input := getRecording(c)
+		h.LCD().Write("Thinking...", "", &hal.RGB{0,205,0})
 		req.Messages = append(req.Messages, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
 			Content: input,
@@ -122,8 +135,13 @@ func main() {
 			panic(err)
 		}
 		fmt.Printf("%s\n\n", resp.Choices[0].Message.Content)
+		h.LCD().Write("Talking...", "", &hal.RGB{0,205,100})
+
 		cmd := exec.Command("espeak", `"`+resp.Choices[0].Message.Content+`"`)
 		cmd.Run()
+
+		h.LCD().Write("Press to start", "", &hal.RGB{0,205,200})
 		req.Messages = append(req.Messages, resp.Choices[0].Message)
+
 	}
 }
