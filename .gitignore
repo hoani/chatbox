@@ -8,6 +8,8 @@ chatbox
 
 # generated files
 *.wav
+*.pyc
+__pycache__
 
 # Test binary, built with `go test -c`
 *.test

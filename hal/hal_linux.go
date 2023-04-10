@@ -7,6 +7,7 @@ const buttonPin = 5
 type hal struct {
 	button rpio.Pin
 	leds *leds
+	lcd *lcd
 }
 
 func newHal() (*hal, error) {
@@ -26,6 +27,7 @@ func newHal() (*hal, error) {
 	return &hal{
 		button: button,
 		leds: leds,
+		lcd: newLCD(),
 	}, nil
 }
 
@@ -35,4 +37,8 @@ func (h *hal) Button() bool {
 
 func (h *hal) Leds() Leds {
 	return h.leds
+}
+
+func (h *hal) LCD() LCD {
+	return h.lcd
 }

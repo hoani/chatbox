@@ -87,6 +87,8 @@ func main() {
 	h.Leds().HSV(0, hsvs...)
 	h.Leds().Show()
 
+	h.LCD().Write("Hello Chatbot", "Press to start", &hal.RGB{100,105,200})
+
 	req := openai.ChatCompletionRequest{
 		Model: openai.GPT3Dot5Turbo,
 		Messages: []openai.ChatCompletionMessage{

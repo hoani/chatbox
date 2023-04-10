@@ -15,9 +15,14 @@ type Leds interface {
 	Clear()
 }
 
+type LCD interface {
+	Write(line1, line2 string, color *RGB)
+}
+
 type Hal interface {
 	Button() bool
 	Leds() Leds
+	LCD() LCD
 }
 
 func NewHal() (Hal, error) {
