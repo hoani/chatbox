@@ -73,6 +73,7 @@ func getRecording(c *openai.Client) string {
 }
 
 func main() {
+
 	key := os.Getenv("OPENAI_KEY")
 	if key == "" {
 		panic("Please set envvar OPENAI_KEY")
@@ -120,7 +121,15 @@ func main() {
 				fmt.Print("Got buttn press")
 				break
 			}
-			time.Sleep(20 * time.Millisecond)
+			for i := range hsvs {
+				hsvs[i].H += 1
+			}
+		
+			h.Leds().HSV(0, hsvs...)
+			h.Leds().Show()
+			
+			time.Sleep(10 * time.Millisecond)
+			
 		}
 
 		h.LCD().Write("Listening...", "release to stop", &hal.RGB{200,205,0})
