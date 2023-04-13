@@ -73,6 +73,10 @@ func getRecording(c *openai.Client) string {
 }
 
 func main() {
+	key := os.Getenv("OPENAI_KEY")
+	if key == "" {
+		panic("Please set envvar OPENAI_KEY")
+	}
 	c := openai.NewClient(os.Getenv("OPENAI_KEY"))
 
 	var err error
