@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hoani/chatbox/strutil"
 )
 
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
@@ -44,6 +45,7 @@ type Model struct {
 	lcdStyle    lipgloss.Style
 	debug       string
 	buttonState bool
+	width       int
 }
 
 func NewUI() *Model {
@@ -67,6 +69,7 @@ func NewUI() *Model {
 			MaxWidth(4 + LCDWidth).MarginLeft(2).MarginRight(2).
 			Background(lcdColor).
 			Foreground(lipgloss.Color("#eeeeee")),
+		width: 100,
 	}
 }
 
@@ -92,19 +95,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.pending[i] = color
 			}
 		}
-		return m, nil
-
 	case LEDShow:
 		for i, color := range m.pending {
 			m.leds[i] = lipgloss.NewStyle().Foreground(color).Render("✮")
 		}
-		return m, nil
 
 	case LEDClear:
 		for i := range m.pending {
 			m.pending[i] = lipgloss.Color("#000000")
 		}
-		return m, nil
 
 	case LCDUpdate:
 		m.lcd.Lines = msg.Lines
@@ -117,7 +116,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.lcd.Color = msg.Color
 			m.lcdStyle = m.lcdStyle.Background(m.lcd.Color)
 		}
-		return m, nil
+
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+
 	case Debug:
 		m.debug = string(msg)
 	}
@@ -131,6 +133,7 @@ func (m *Model) View() string {
 }
 
 func (m *Model) ViewLEDs() string {
+	debugSplit := strutil.SplitWidth(m.debug, m.width)
 
 	return fmt.Sprintf(`
       %s %s %s %s
@@ -155,7 +158,7 @@ func (m *Model) ViewLEDs() string {
 		m.leds[nLEDs-7], m.leds[10],
 		m.leds[nLEDs-8], m.leds[11],
 		m.leds[15], m.leds[14], m.leds[13], m.leds[12],
-		m.debug,
+		strings.Join(debugSplit, "\n"),
 	)
 }
 

@@ -75,7 +75,7 @@ func main() {
 	if key == "" {
 		panic("Please set envvar OPENAI_KEY")
 	}
-	c := openai.NewClient(os.Getenv("OPENAI_KEY"))
+	c := openai.NewClient(key)
 
 	var err error
 	if h, err = hal.NewHal(); err != nil {
@@ -107,13 +107,10 @@ func main() {
 			{
 				Role: openai.ChatMessageRoleSystem,
 				Content: "respond as an exaggerated Jim Carrey whose soul has been trapped inside a raspberry pi. " +
-					"The raspberry pi is encased in a speaker with an LED ring and LCD display. " +
-					"When the user calls you by an incorrect, but similar name, respond as if they said your name correctly. " +
-					"Please do not add any action prompts to your responses." +
-					"If the user has not introduced themselves, ask thier name. ",
+					"When the user calls you by an incorrect name, respond as if they said your name correctly. ",
 			},
 		},
-		Temperature: 0.8,
+		Temperature: 1.0,
 	}
 
 	for {
