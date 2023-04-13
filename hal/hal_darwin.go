@@ -9,6 +9,8 @@ type hal struct {
 	button *button
 	leds   *leds
 	lcd    *lcd
+	prog   *tea.Program
+	m      *ui.Model
 }
 
 func newHal() (*hal, error) {
@@ -16,13 +18,18 @@ func newHal() (*hal, error) {
 	prog := tea.NewProgram(m)
 
 	h := &hal{
-		button: &button{},
-		lcd:    &lcd{},
-		leds:   &leds{prog: prog},
+		lcd:  newLCD(prog),
+		leds: newLeds(prog),
+		prog: prog,
+		m:    m,
 	}
-	h.button.start()
+
 	go prog.Run()
 	return h, nil
+}
+
+func (h *hal) Debug(msg string) {
+	h.prog.Send(ui.Debug(msg))
 }
 
 func (h *hal) Leds() Leds {
@@ -34,5 +41,5 @@ func (h *hal) LCD() LCD {
 }
 
 func (h *hal) Button() bool {
-	return h.button.get()
+	return h.m.ButtonState()
 }

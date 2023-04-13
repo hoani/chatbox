@@ -3,7 +3,6 @@ package hal
 import (
 	"fmt"
 	"math"
-	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -11,13 +10,11 @@ import (
 )
 
 type leds struct {
-	value bool
-	lock  sync.Mutex
-	prog  *tea.Program
+	prog *tea.Program
 }
 
-func newLeds() *leds {
-	return &leds{}
+func newLeds(prog *tea.Program) *leds {
+	return &leds{prog: prog}
 }
 
 func (l *leds) HSV(index int, values ...HSV) {
@@ -32,7 +29,7 @@ func (l *leds) RGB(index int, values ...RGB) {
 
 	colors := make([]lipgloss.Color, len(values))
 	for i, value := range values {
-		colors[i] = lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", value.R, value.G, value.B))
+		colors[i] = RGBtoLipglossColor(value)
 	}
 
 	l.prog.Send(ui.LEDColors{
@@ -47,6 +44,10 @@ func (l *leds) Show() {
 func (l *leds) Clear() {
 	l.prog.Send(ui.LEDClear{})
 
+}
+
+func RGBtoLipglossColor(in RGB) lipgloss.Color {
+	return lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", in.R, in.G, in.B))
 }
 
 // https://www.rapidtables.com/convert/color/hsv-to-rgb.html

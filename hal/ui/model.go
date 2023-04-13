@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -25,47 +26,64 @@ type LEDColors struct {
 	Colors []lipgloss.Color
 }
 
+type Debug string
+
 type LEDShow struct{}
 
 type LEDClear struct{}
 
-type LCDColor lipgloss.Color
-type LCDLine1 string
-type LCDLine2 string
-
-type model struct {
-	pending  [nLEDs]lipgloss.Color
-	leds     [nLEDs]string
-	lcdColor lipgloss.Color
-	lcdLine1 string
-	lcdLine2 string
+type LCDUpdate struct {
+	Color *lipgloss.Color
+	Lines [LCDHeight]string
 }
 
-func NewUI() tea.Model {
+type Model struct {
+	pending     [nLEDs]lipgloss.Color
+	leds        [nLEDs]string
+	lcd         LCDUpdate
+	lcdStyle    lipgloss.Style
+	debug       string
+	buttonState bool
+}
+
+func NewUI() *Model {
 	colors := [nLEDs]lipgloss.Color{}
 	leds := [nLEDs]string{}
 	for i := range colors {
 		colors[i] = lipgloss.Color("#000000")
 		leds[i] = lipgloss.NewStyle().Foreground(colors[i]).Render(" ")
 	}
+	lcdColor := lipgloss.Color("#0000ee")
 
-	return model{
-		pending:  colors,
-		leds:     leds,
-		lcdColor: lipgloss.Color("#0000ee"),
+	return &Model{
+		pending: colors,
+		leds:    leds,
+		lcd: LCDUpdate{
+			Color: &lcdColor,
+			Lines: [LCDHeight]string{},
+		},
+		lcdStyle: lipgloss.NewStyle().
+			ColorWhitespace(true).
+			MaxWidth(4 + LCDWidth).MarginLeft(2).MarginRight(2).
+			Background(lcdColor).
+			Foreground(lipgloss.Color("#eeeeee")),
 	}
 }
 
-func (m model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	updateCount++
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC {
+		switch msg.Type {
+		case tea.KeyCtrlC:
 			return m, tea.Quit
+		case tea.KeySpace:
+			m.buttonState = !m.buttonState
+			return m, nil
 		}
 
 	case LEDColors:
@@ -88,38 +106,59 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case LCDUpdate:
+		m.lcd.Lines = msg.Lines
+		for i, line := range m.lcd.Lines {
+			if padding := LCDWidth - len(line); padding > 0 {
+				m.lcd.Lines[i] = line + strings.Repeat(" ", padding)
+			}
+		}
+		if msg.Color != nil {
+			m.lcd.Color = msg.Color
+			m.lcdStyle = m.lcdStyle.Background(m.lcd.Color)
+		}
+		return m, nil
+	case Debug:
+		m.debug = string(msg)
 	}
 	return m, nil
 }
 
-func (m model) View() string {
+func (m *Model) View() string {
 
-	return "\n" +
-		m.ViewLEDs() + "\n\n" +
-		helpStyle("Press any key to quit")
+	return m.ViewLEDs() + "\n" +
+		helpStyle("Press space to talk/stop talking, press Ctl-C to quit UI")
 }
 
-func (m model) ViewLEDs() string {
+func (m *Model) ViewLEDs() string {
+
 	return fmt.Sprintf(`
       %s %s %s %s
     %s         %s
   %s             %s
 %s                 %s
-%s                 %s
-%s                 %s
+%s                 %s%s
+%s                 %s%s
 %s                 %s
   %s             %s
     %s         %s
       %s %s %s %s
+
+%s
 `, m.leds[0], m.leds[1], m.leds[2], m.leds[3],
 		m.leds[nLEDs-1], m.leds[4],
 		m.leds[nLEDs-2], m.leds[5],
 		m.leds[nLEDs-3], m.leds[6],
-		m.leds[nLEDs-4], m.leds[7],
-		m.leds[nLEDs-5], m.leds[8],
+		m.leds[nLEDs-4], m.leds[7], m.lcdStyle.Render(m.lcd.Lines[0]),
+		m.leds[nLEDs-5], m.leds[8], m.lcdStyle.Render(m.lcd.Lines[1]),
 		m.leds[nLEDs-6], m.leds[9],
 		m.leds[nLEDs-7], m.leds[10],
 		m.leds[nLEDs-8], m.leds[11],
 		m.leds[15], m.leds[14], m.leds[13], m.leds[12],
+		m.debug,
 	)
+}
+
+func (m *Model) ButtonState() bool {
+	return m.buttonState
 }

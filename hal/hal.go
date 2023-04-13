@@ -23,6 +23,7 @@ type Hal interface {
 	Button() bool
 	Leds() Leds
 	LCD() LCD
+	Debug(string)
 }
 
 func NewHal() (Hal, error) {

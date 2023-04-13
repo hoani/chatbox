@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/faiface/beep/wav"
+	"github.com/hoani/chatbox/3rdparty/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
 	"github.com/hoani/toot"
 	openai "github.com/sashabaranov/go-openai"
@@ -26,7 +26,7 @@ func getRecording(c *openai.Client) string {
 	}
 	defer m.Close()
 
-	fmt.Printf("%#v\n", m.DeviceInfo())
+	// h.Debug(fmt.Sprintf("%#v\n", m.DeviceInfo()))
 
 	path := filepath.Join(wd, "test.wav")
 	f, err := os.Create(path)
@@ -47,7 +47,6 @@ func getRecording(c *openai.Client) string {
 		panic(err)
 	}
 
-	fmt.Print("\nPress [ENTER] to finish recording! ")
 	for {
 		if !h.Button() {
 			time.Sleep(200 * time.Millisecond)
@@ -56,7 +55,6 @@ func getRecording(c *openai.Client) string {
 		time.Sleep(time.Millisecond)
 	}
 	m.Close()
-	fmt.Printf("\033[2K\r")
 	wg.Wait()
 
 	resp, err := c.CreateTranslation(
@@ -66,7 +64,6 @@ func getRecording(c *openai.Client) string {
 			FilePath: path,
 		})
 	if err != nil {
-		fmt.Printf("%v\n", err)
 		panic(err)
 	}
 	return resp.Text
@@ -102,7 +99,7 @@ func main() {
 	h.Leds().HSV(0, hsvs...)
 	h.Leds().Show()
 
-	h.LCD().Write("Hello Chatbot", "Press to start", &hal.RGB{100, 105, 200})
+	h.LCD().Write("Hello Chatbot", "Press to start", &hal.RGB{R: 100, G: 105, B: 200})
 
 	req := openai.ChatCompletionRequest{
 		Model: openai.GPT3Dot5Turbo,
@@ -115,10 +112,8 @@ func main() {
 	}
 
 	for {
-		fmt.Print("Press [ENTER] to start recording!")
 		for {
 			if h.Button() {
-				fmt.Print("Got buttn press")
 				break
 			}
 			for i := range hsvs {
@@ -141,13 +136,12 @@ func main() {
 			Content: input,
 		})
 
-		fmt.Printf("\033[2K\r")
-		fmt.Printf("User: %s \n\n", input)
+		h.Debug(fmt.Sprintf("User: %s \n\n", input))
 		resp, err := c.CreateChatCompletion(context.Background(), req)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("%s\n\n", resp.Choices[0].Message.Content)
+		h.Debug(fmt.Sprintf("%s\n\n", resp.Choices[0].Message.Content))
 		h.LCD().Write("Talking...", "", &hal.RGB{0, 205, 100})
 
 		cmd := exec.Command("espeak", `"`+resp.Choices[0].Message.Content+`"`)
