@@ -46,7 +46,7 @@ func NewUI() tea.Model {
 	leds := [nLEDs]string{}
 	for i := range colors {
 		colors[i] = lipgloss.Color("#000000")
-		leds[i] = lipgloss.NewStyle().Background(colors[i]).Render(" ")
+		leds[i] = lipgloss.NewStyle().Foreground(colors[i]).Render(" ")
 	}
 
 	return model{
@@ -78,7 +78,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case LEDShow:
 		for i, color := range m.pending {
-			m.leds[i] = lipgloss.NewStyle().Background(color).Render(" ")
+			m.leds[i] = lipgloss.NewStyle().Foreground(color).Render("✮")
 		}
 		return m, nil
 
@@ -101,16 +101,16 @@ func (m model) View() string {
 
 func (m model) ViewLEDs() string {
 	return fmt.Sprintf(`
-   %s%s%s%s
-  %s    %s
- %s      %s
-%s        %s
-%s        %s
-%s        %s
-%s        %s
- %s      %s
-  %s    %s
-   %s%s%s%s
+      %s %s %s %s
+    %s         %s
+  %s             %s
+%s                 %s
+%s                 %s
+%s                 %s
+%s                 %s
+  %s             %s
+    %s         %s
+      %s %s %s %s
 `, m.leds[0], m.leds[1], m.leds[2], m.leds[3],
 		m.leds[nLEDs-1], m.leds[4],
 		m.leds[nLEDs-2], m.leds[5],

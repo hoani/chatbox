@@ -51,10 +51,10 @@ func (l *leds) Clear() {
 
 // https://www.rapidtables.com/convert/color/hsv-to-rgb.html
 func HSVtoRGB(in HSV) RGB {
-	c := float64(in.V) / 256.0 * float64(in.S) / 256.0
-	theta := 360 * float64(in.H) / 256
-	x := c * math.Abs(float64(int(theta/60.0)%2)-1)
-	m := float64(in.V) - c
+	c := (float64(in.V) / 256.0) * (float64(in.S) / 256.0)
+	theta := 360.0 * float64(in.H) / 256.0
+	x := c * (1 - math.Abs(float64(int(theta/60.0)%2)-1))
+	m := (float64(in.V) / 256.0) - c
 
 	c = c * 256
 	x = x * 256

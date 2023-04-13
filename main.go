@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
-	"path/filepath"
 
 	"github.com/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
@@ -95,14 +95,14 @@ func main() {
 		hsvs = append(hsvs, hal.HSV{
 			H: uint8(i) * 10,
 			S: 0xFF,
-			V: 0x80,
+			V: 0x50,
 		})
 	}
 
 	h.Leds().HSV(0, hsvs...)
 	h.Leds().Show()
 
-	h.LCD().Write("Hello Chatbot", "Press to start", &hal.RGB{100,105,200})
+	h.LCD().Write("Hello Chatbot", "Press to start", &hal.RGB{100, 105, 200})
 
 	req := openai.ChatCompletionRequest{
 		Model: openai.GPT3Dot5Turbo,
@@ -124,18 +124,18 @@ func main() {
 			for i := range hsvs {
 				hsvs[i].H += 1
 			}
-		
+
 			h.Leds().HSV(0, hsvs...)
 			h.Leds().Show()
-			
+
 			time.Sleep(10 * time.Millisecond)
-			
+
 		}
 
-		h.LCD().Write("Listening...", "release to stop", &hal.RGB{200,205,0})
+		h.LCD().Write("Listening...", "release to stop", &hal.RGB{200, 205, 0})
 
 		input := getRecording(c)
-		h.LCD().Write("Thinking...", "", &hal.RGB{0,205,0})
+		h.LCD().Write("Thinking...", "", &hal.RGB{0, 205, 0})
 		req.Messages = append(req.Messages, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
 			Content: input,
@@ -148,12 +148,12 @@ func main() {
 			panic(err)
 		}
 		fmt.Printf("%s\n\n", resp.Choices[0].Message.Content)
-		h.LCD().Write("Talking...", "", &hal.RGB{0,205,100})
+		h.LCD().Write("Talking...", "", &hal.RGB{0, 205, 100})
 
 		cmd := exec.Command("espeak", `"`+resp.Choices[0].Message.Content+`"`)
 		cmd.Run()
 
-		h.LCD().Write("Press to start", "", &hal.RGB{0,205,200})
+		h.LCD().Write("Press to start", "", &hal.RGB{0, 205, 200})
 		req.Messages = append(req.Messages, resp.Choices[0].Message)
 
 	}
