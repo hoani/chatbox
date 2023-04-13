@@ -105,10 +105,15 @@ func main() {
 		Model: openai.GPT3Dot5Turbo,
 		Messages: []openai.ChatCompletionMessage{
 			{
-				Role:    openai.ChatMessageRoleSystem,
-				Content: "respond as an exaggerated Jim Carrey whose soul has been trapped inside a korok soft toy. Please do not add any action prompts to your responses.",
+				Role: openai.ChatMessageRoleSystem,
+				Content: "respond as an exaggerated Jim Carrey whose soul has been trapped inside a raspberry pi. " +
+					"The raspberry pi is encased in a speaker with an LED ring and LCD display. " +
+					"When the user calls you by an incorrect, but similar name, respond as if they said your name correctly. " +
+					"Please do not add any action prompts to your responses." +
+					"If the user has not introduced themselves, ask thier name. ",
 			},
 		},
+		Temperature: 0.8,
 	}
 
 	for {
