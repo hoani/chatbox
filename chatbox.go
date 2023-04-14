@@ -373,7 +373,8 @@ func (c *chatbox) doStateTalking() {
 				exec.Command("espeak", "-z", `"`+sentence+`"`).Run()
 			}()
 			wpm := 175
-			mspw := int((60.0 * 1000.0) / float64(wpm))
+			adjustment := 0.8 // espeak is a bit faster than the wpm would suggest.
+			mspw := int(adjustment * (60.0 * 1000.0) / float64(wpm))
 			for _, part := range parts {
 				part = strings.TrimSpace(part)
 				words := strings.Count(part, " ") + 1
