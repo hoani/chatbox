@@ -38,7 +38,7 @@ func (v *visualizer) Start(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(time.Millisecond):
+		case <-time.After(50*time.Millisecond):
 			s := a.GetPowerSpectrum()
 			if s == nil {
 				continue
@@ -47,7 +47,7 @@ func (v *visualizer) Start(ctx context.Context) error {
 			result := tv.Bin(s)
 			v.channelsLock.Lock()
 			for i, r := range result {
-				v.channels[i] = math.Log10(1+r*1000) * 1000 // Do some log scaling to make the power spectra show up nicer.
+				v.channels[i] = math.Log10(1+r*1000) * 5000 // Do some log scaling to make the power spectra show up nicer.
 			}
 			v.channelsLock.Unlock()
 		}

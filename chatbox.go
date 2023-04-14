@@ -184,7 +184,7 @@ func (c *chatbox) doStateReady() {
 			break
 		}
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(5*time.Millisecond)
 
 		channels := v.Channels()
 
@@ -195,11 +195,11 @@ func (c *chatbox) doStateReady() {
 				j = leds.NChannels - (1 + i - leds.NChannels)
 			}
 			v := channels[j]
-			if v > 128.0 {
-				v = 128.0
+			if v > float64(0xa0) {
+				v = float64(0xa0)
 			}
 			hsvs[i].V = 0x40 + uint8(v)
-			c.hal.Debug(fmt.Sprintf("%#v\n", channels))
+			// c.hal.Debug(fmt.Sprintf("%#v\n", channels))
 		}
 
 		c.hal.Leds().HSV(0, hsvs...)

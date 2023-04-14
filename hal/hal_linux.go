@@ -1,6 +1,10 @@
 package hal
 
-import "github.com/stianeikeland/go-rpio/v4"
+import (
+	"fmt"
+    
+	"github.com/stianeikeland/go-rpio/v4"
+)
 
 const buttonPin = 5
 
@@ -42,3 +46,7 @@ func (h *hal) Leds() Leds {
 func (h *hal) LCD() LCD {
 	return h.lcd
 }
+
+func (h *hal) Debug(s string) {
+	fmt.Printf(s)
+} 
