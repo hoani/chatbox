@@ -82,7 +82,7 @@ func (c *chatbox) run() error {
 			{
 				Role: openai.ChatMessageRoleSystem,
 				Content: "respond as an exaggerated Jim Carrey whose soul has been trapped inside a raspberry pi. " +
-					"When the user calls you by an incorrect name, respond as if they said your name correctly. " +
+					"When possible keep responses to less than three sentences. " +
 					"Your key objective is to have interesting conversations. ",
 			},
 		},
@@ -241,7 +241,44 @@ func (c *chatbox) doStateListen() {
 }
 
 func (c *chatbox) doStateThink() {
-	c.hal.LCD().Write("Thinking...", "", &hal.RGB{R: 0, G: 205, B: 0})
+	c.hal.LCD().Write("Thinking...", "", &hal.RGB{R: 0, G: 205, B: 200})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		hsvs := []hal.HSV{}
+		for i := 0; i < 12; i++ {
+			hsvs = append(hsvs, hal.HSV{
+				H: 0xa0,
+				S: 0xFF,
+				V: 20 + 20*uint8(i),
+			})
+		}
+		for i := 0; i < 12; i++ {
+			hsvs = append(hsvs, hal.HSV{
+				H: 0xf0,
+				S: 0xFF,
+				V: 20 + 20*uint8(i),
+			})
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Millisecond * 50):
+				last := hsvs[23]
+				for i := 23; i >= 0; i-- {
+					hsvs[i] = hsvs[(i+23)%24]
+				}
+				hsvs[0] = last
+
+				c.hal.Leds().HSV(0, hsvs...)
+				c.hal.Leds().Show()
+			}
+		}
+	}()
 
 	var path string
 	select {
