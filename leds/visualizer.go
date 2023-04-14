@@ -22,6 +22,7 @@ type visualizer struct {
 	channelsLock sync.Mutex
 	sink         func(s beep.Streamer)
 	source       *Source
+	wg           sync.WaitGroup
 }
 
 func NewVisualizer(options ...func(*visualizer)) *visualizer {
@@ -51,6 +52,8 @@ func WithSource(source *Source) func(*visualizer) {
 }
 
 func (v *visualizer) Start(ctx context.Context) error {
+	v.wg.Add(1)
+	defer v.wg.Done()
 	if v.source == nil {
 		m, err := toot.NewDefaultMicrophone()
 		if err != nil {
@@ -93,4 +96,9 @@ func (v *visualizer) Channels() [NChannels]float64 {
 	v.channelsLock.Lock()
 	defer v.channelsLock.Unlock()
 	return v.channels
+}
+
+// Waits until the visualizer is closed.
+func (v *visualizer) Wait() {
+	v.wg.Wait()
 }

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/faiface/beep"
@@ -95,16 +94,13 @@ func (c *chatbox) run() error {
 		c.doStateListen()
 
 		c.doStateThink()
-		c.hal.LCD().Write("Talking...", "", &hal.RGB{R: 0, G: 205, B: 100})
 
-		cmd := exec.Command("espeak", `"`+c.chat.Messages[len(c.chat.Messages)-1].Content+`"`)
-		cmd.Run()
+		c.doStateTalking()
 
 	}
 }
 
 func (c *chatbox) doStateReady() {
-	wg := sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	c.hal.LCD().Write("Press to start", "", &hal.RGB{R: 0, G: 205, B: 200})
@@ -119,13 +115,12 @@ func (c *chatbox) doStateReady() {
 	}
 
 	v := leds.NewVisualizer()
-	wg.Add(1)
 	go func() {
 		if err := v.Start(ctx); err != nil {
 			panic(err)
 		}
-		wg.Done()
 	}()
+	defer v.Wait()
 
 	for {
 		if c.hal.Button() {
@@ -154,7 +149,6 @@ func (c *chatbox) doStateReady() {
 		c.hal.Leds().HSV(0, hsvs...)
 		c.hal.Leds().Show()
 	}
-	wg.Wait()
 }
 
 func (c *chatbox) doStateListen() {
@@ -317,5 +311,11 @@ func (c *chatbox) doStateThink() {
 	}
 	c.hal.Debug(fmt.Sprintf("%s", resp.Choices[0].Message.Content))
 	c.chat.Messages = append(c.chat.Messages, resp.Choices[0].Message)
+}
 
+func (c *chatbox) doStateTalking() {
+	c.hal.LCD().Write("Talking...", "", &hal.RGB{R: 0, G: 205, B: 100})
+
+	cmd := exec.Command("espeak", `"`+c.chat.Messages[len(c.chat.Messages)-1].Content+`"`)
+	cmd.Run()
 }
