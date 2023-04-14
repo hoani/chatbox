@@ -6,6 +6,72 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSplitBrackets(t *testing.T) {
+	testCases := []struct {
+		name     string
+		in       string
+		expected []string
+	}{
+		{
+			name:     "empty string",
+			in:       "",
+			expected: []string{},
+		},
+		{
+			name:     "no brackets",
+			in:       "hello world",
+			expected: []string{"hello world"},
+		},
+		{
+			name:     "curved bracket complete",
+			in:       "hello (world) hello",
+			expected: []string{"hello", "(world)", "hello"},
+		},
+		{
+			name:     "curved bracket incomplete",
+			in:       "hello (world",
+			expected: []string{"hello", "(world"},
+		},
+		{
+			name:     "curved terminating bracket",
+			in:       "hello) world",
+			expected: []string{"hello) world"},
+		},
+		{
+			name:     "curly bracket complete",
+			in:       "hello {world}",
+			expected: []string{"hello", "{world}"},
+		},
+		{
+			name:     "square bracket complete",
+			in:       "hello [world]",
+			expected: []string{"hello", "[world]"},
+		},
+		{
+			name:     "angle bracket complete",
+			in:       "hello <world>",
+			expected: []string{"hello", "<world>"},
+		},
+		{
+			name:     "curved and curly bracket complete",
+			in:       "hello (world) {how are you today?}",
+			expected: []string{"hello", "(world)", "{how are you today?}"},
+		},
+		{
+			name:     "nested brackets",
+			in:       "hello (world {how (are) you today?})",
+			expected: []string{"hello", "(world {how (are) you today?})"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := SplitBrackets(tc.in)
+			require.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
 func TestSplitWidth(t *testing.T) {
 	testCases := []struct {
 		name     string
