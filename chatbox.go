@@ -314,6 +314,39 @@ func (c *chatbox) doStateThink() {
 }
 
 func (c *chatbox) doStateTalking() {
+	v := leds.NewVisualizer()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go v.Start(ctx)
+	defer v.Wait()
+	defer cancel()
+
+	go func() {
+		hsvs := []hal.HSV{}
+		for i := 0; i < 24; i++ {
+			hsvs = append(hsvs, hal.HSV{
+				H: 0x80,
+				S: 0x00,
+				V: 0x50,
+			})
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Millisecond * 50):
+				channels := v.Channels()
+				for i := range hsvs {
+					hsvs[i].V = 0x50 + uint8(channels[i%leds.NChannels])
+				}
+
+				c.hal.Leds().HSV(0, hsvs...)
+				c.hal.Leds().Show()
+			}
+		}
+	}()
+
 	c.hal.LCD().Write("Talking...", "", &hal.RGB{R: 0, G: 205, B: 100})
 
 	cmd := exec.Command("espeak", `"`+c.chat.Messages[len(c.chat.Messages)-1].Content+`"`)
