@@ -27,10 +27,12 @@ const (
 )
 
 type chatbox struct {
-	openai *openai.Client
-	hal    hal.Hal
-	wd     string
-	state  state
+	openai      *openai.Client
+	hal         hal.Hal
+	wd          string
+	state       state
+	recordingCh chan string
+	chat        *openai.ChatCompletionRequest
 }
 
 func NewChatBox(key string) (*chatbox, error) {
@@ -64,65 +66,16 @@ func NewChatBox(key string) (*chatbox, error) {
 	h.LCD().Write("Hello Chatbot", "Press to start", &hal.RGB{R: 100, G: 105, B: 200})
 
 	return &chatbox{
-		openai: c,
-		hal:    h,
-		wd:     wd,
-		state:  stateReady,
+		openai:      c,
+		hal:         h,
+		wd:          wd,
+		state:       stateReady,
+		recordingCh: make(chan string),
 	}, nil
 }
 
-func (c *chatbox) getRecording() string {
-	m, err := toot.NewDefaultMicrophone()
-	if err != nil {
-		panic(err)
-	}
-	defer m.Close()
-
-	// h.Debug(fmt.Sprintf("%#v\n", m.DeviceInfo()))
-
-	path := filepath.Join(c.wd, "test.wav")
-	f, err := os.Create(path)
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		err = wav.Encode(f, m, m.Format())
-		if err != nil {
-			panic(err)
-		}
-		wg.Done()
-	}()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	if err := m.Start(ctx); err != nil {
-		panic(err)
-	}
-
-	for {
-		if !c.hal.Button() {
-			break
-		}
-		time.Sleep(time.Millisecond)
-	}
-	time.Sleep(time.Millisecond * 100)
-	m.Close()
-	wg.Wait()
-
-	resp, err := c.openai.CreateTranslation(
-		context.Background(),
-		openai.AudioRequest{
-			Model:    openai.Whisper1,
-			FilePath: path,
-		})
-	if err != nil {
-		panic(err)
-	}
-	return resp.Text
-}
-
 func (c *chatbox) run() error {
-	req := openai.ChatCompletionRequest{
+	c.chat = &openai.ChatCompletionRequest{
 		Model: openai.GPT3Dot5Turbo,
 		Messages: []openai.ChatCompletionMessage{
 			{
@@ -137,32 +90,19 @@ func (c *chatbox) run() error {
 	for {
 		c.doStateReady()
 
-		c.hal.LCD().Write("Listening...", "release to stop", &hal.RGB{R: 200, G: 205, B: 0})
+		c.doStateListen()
 
-		input := c.getRecording()
-		c.hal.LCD().Write("Thinking...", "", &hal.RGB{R: 0, G: 205, B: 0})
-		req.Messages = append(req.Messages, openai.ChatCompletionMessage{
-			Role:    openai.ChatMessageRoleUser,
-			Content: input,
-		})
-
-		c.hal.Debug(fmt.Sprintf("User: %s \n\n", input))
-		resp, err := c.openai.CreateChatCompletion(context.Background(), req)
-		if err != nil {
-			panic(err)
-		}
-		c.hal.Debug(fmt.Sprintf("%s\n\n", resp.Choices[0].Message.Content))
+		c.doStateThink()
 		c.hal.LCD().Write("Talking...", "", &hal.RGB{R: 0, G: 205, B: 100})
 
-		cmd := exec.Command("espeak", `"`+resp.Choices[0].Message.Content+`"`)
+		cmd := exec.Command("espeak", `"`+c.chat.Messages[len(c.chat.Messages)-1].Content+`"`)
 		cmd.Run()
-
-		req.Messages = append(req.Messages, resp.Choices[0].Message)
 
 	}
 }
 
 func (c *chatbox) doStateReady() {
+	wg := sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	c.hal.LCD().Write("Press to start", "", &hal.RGB{R: 0, G: 205, B: 200})
@@ -177,14 +117,21 @@ func (c *chatbox) doStateReady() {
 	}
 
 	v := leds.NewVisualizer()
-	go v.Start(ctx)
+	wg.Add(1)
+	go func() {
+		if err := v.Start(ctx); err != nil {
+			panic(err)
+		}
+		wg.Done()
+	}()
 
 	for {
 		if c.hal.Button() {
+			cancel()
 			break
 		}
 
-		time.Sleep(20*time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 
 		channels := v.Channels()
 
@@ -204,6 +151,108 @@ func (c *chatbox) doStateReady() {
 
 		c.hal.Leds().HSV(0, hsvs...)
 		c.hal.Leds().Show()
-
 	}
+	wg.Wait()
+}
+
+func (c *chatbox) doStateListen() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c.hal.LCD().Write("Listening...", "release to stop", &hal.RGB{R: 200, G: 205, B: 0})
+
+	// hsvs := []hal.HSV{}
+	// for i := 0; i < 24; i++ {
+	// 	hsvs = append(hsvs, hal.HSV{
+	// 		H: uint8(i) * 10,
+	// 		S: 0xFF,
+	// 		V: 0x50,
+	// 	})
+	// }
+
+	// v := leds.NewVisualizer()
+	// go v.Start(ctx)
+
+	path := filepath.Join(c.wd, "test.wav")
+	f, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+	m, err := toot.NewDefaultMicrophone()
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		go func() {
+			time.Sleep(time.Second) // Delay a bit before stopping.
+			m.Close()
+		}()
+	}()
+
+	// h.Debug(fmt.Sprintf("%#v\n", m.DeviceInfo()))
+
+	go func() {
+		err = wav.Encode(f, m, m.Format())
+		if err != nil {
+			c.hal.Debug(fmt.Sprintf("error encoding wav: %v", err))
+			path = ""
+		}
+		f.Close()
+		c.hal.Debug(path)
+		c.recordingCh <- path
+	}()
+
+	if err := m.Start(ctx); err != nil {
+		panic(err)
+	}
+
+	for {
+		if !c.hal.Button() {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func (c *chatbox) doStateThink() {
+	c.hal.LCD().Write("Thinking...", "", &hal.RGB{R: 0, G: 205, B: 0})
+
+	var path string
+	select {
+	case path = <-c.recordingCh:
+		if path == "" {
+			c.hal.Debug("recording path is empty")
+			return
+		}
+	case <-time.After(time.Second * 5):
+		c.hal.Debug("timeout waiting for recording")
+		return
+	}
+
+	translation, err := c.openai.CreateTranslation(
+		context.Background(),
+		openai.AudioRequest{
+			Model:    openai.Whisper1,
+			FilePath: path,
+		})
+	if err != nil {
+		c.hal.Debug(fmt.Sprintf("translation error: %#v\n", err))
+		return
+	}
+
+	c.hal.Debug(fmt.Sprintf("User: %s \n", translation.Text))
+
+	c.chat.Messages = append(c.chat.Messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: translation.Text,
+	})
+
+	resp, err := c.openai.CreateChatCompletion(context.Background(), *c.chat)
+	if err != nil {
+		c.hal.Debug(fmt.Sprintf("chat error: %#v\n", err))
+		return
+	}
+	c.hal.Debug(fmt.Sprintf("%s", resp.Choices[0].Message.Content))
+	c.chat.Messages = append(c.chat.Messages, resp.Choices[0].Message)
+
 }
