@@ -6,39 +6,74 @@ import (
 	"sync"
 	"time"
 
+	"github.com/faiface/beep"
 	"github.com/hoani/toot"
 )
 
 const NChannels = 12
 
+type Source struct {
+	Streamer   beep.Streamer
+	SampleRate beep.SampleRate
+}
+
 type visualizer struct {
 	channels     [NChannels]float64
 	channelsLock sync.Mutex
+	sink         func(s beep.Streamer)
+	source       *Source
 }
 
-func NewVisualizer() *visualizer {
-	return &visualizer{}
+func NewVisualizer(options ...func(*visualizer)) *visualizer {
+	v := &visualizer{}
+	for _, o := range options {
+		o(v)
+	}
+	if v.sink == nil {
+		v.sink = func(s beep.Streamer) {
+			d := NewSink(s)
+			go d.Run()
+		}
+	}
+	return v
+}
+
+func WithSink(sink func(s beep.Streamer)) func(*visualizer) {
+	return func(v *visualizer) {
+		v.sink = sink
+	}
+}
+
+func WithSource(source *Source) func(*visualizer) {
+	return func(v *visualizer) {
+		v.source = source
+	}
 }
 
 func (v *visualizer) Start(ctx context.Context) error {
-	m, err := toot.NewDefaultMicrophone()
-	if err != nil {
-		return err
+	if v.source == nil {
+		m, err := toot.NewDefaultMicrophone()
+		if err != nil {
+			return err
+		}
+		defer m.Close()
+		v.source = &Source{
+			Streamer:   m,
+			SampleRate: m.Format().SampleRate,
+		}
+		go m.Start(ctx)
 	}
-	defer m.Close()
 
-	a := toot.NewAnalyzer(m, int(m.Format().SampleRate), int(m.Format().SampleRate/4))
+	a := toot.NewAnalyzer(v.source.Streamer, int(v.source.SampleRate), int(v.source.SampleRate/4))
 	tv := toot.NewVisualizer(100.0, 4000.0, NChannels)
-	s := NewSink(a)
 
-	go m.Start(ctx)
-	go s.Run()
+	v.sink(a)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(50*time.Millisecond):
+		case <-time.After(50 * time.Millisecond):
 			s := a.GetPowerSpectrum()
 			if s == nil {
 				continue

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/faiface/beep"
 	"github.com/hoani/chatbox/3rdparty/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
 	"github.com/hoani/chatbox/leds"
@@ -81,7 +82,8 @@ func (c *chatbox) run() error {
 			{
 				Role: openai.ChatMessageRoleSystem,
 				Content: "respond as an exaggerated Jim Carrey whose soul has been trapped inside a raspberry pi. " +
-					"When the user calls you by an incorrect name, respond as if they said your name correctly. ",
+					"When the user calls you by an incorrect name, respond as if they said your name correctly. " +
+					"Your key objective is to have interesting conversations. ",
 			},
 		},
 		Temperature: 1.0,
@@ -161,18 +163,6 @@ func (c *chatbox) doStateListen() {
 
 	c.hal.LCD().Write("Listening...", "release to stop", &hal.RGB{R: 200, G: 205, B: 0})
 
-	// hsvs := []hal.HSV{}
-	// for i := 0; i < 24; i++ {
-	// 	hsvs = append(hsvs, hal.HSV{
-	// 		H: uint8(i) * 10,
-	// 		S: 0xFF,
-	// 		V: 0x50,
-	// 	})
-	// }
-
-	// v := leds.NewVisualizer()
-	// go v.Start(ctx)
-
 	path := filepath.Join(c.wd, "test.wav")
 	f, err := os.Create(path)
 	if err != nil {
@@ -189,21 +179,39 @@ func (c *chatbox) doStateListen() {
 		}()
 	}()
 
-	// h.Debug(fmt.Sprintf("%#v\n", m.DeviceInfo()))
+	v := leds.NewVisualizer(
+		leds.WithSource(&leds.Source{
+			Streamer:   m,
+			SampleRate: m.Format().SampleRate,
+		}),
+		leds.WithSink(func(s beep.Streamer) {
+			go func() {
+				err = wav.Encode(f, s, m.Format())
+				if err != nil {
+					c.hal.Debug(fmt.Sprintf("error encoding wav: %v", err))
+					path = ""
+				}
+				f.Close()
+				c.hal.Debug(path)
+				c.recordingCh <- path
+			}()
+		}),
+	)
+	go v.Start(ctx)
 
-	go func() {
-		err = wav.Encode(f, m, m.Format())
-		if err != nil {
-			c.hal.Debug(fmt.Sprintf("error encoding wav: %v", err))
-			path = ""
-		}
-		f.Close()
-		c.hal.Debug(path)
-		c.recordingCh <- path
-	}()
+	// h.Debug(fmt.Sprintf("%#v\n", m.DeviceInfo()))
 
 	if err := m.Start(ctx); err != nil {
 		panic(err)
+	}
+
+	hsvs := []hal.HSV{}
+	for i := 0; i < 24; i++ {
+		hsvs = append(hsvs, hal.HSV{
+			H: 0x60,
+			S: 0xFF,
+			V: 0x50,
+		})
 	}
 
 	for {
@@ -211,6 +219,24 @@ func (c *chatbox) doStateListen() {
 			break
 		}
 		time.Sleep(time.Millisecond)
+
+		channels := v.Channels()
+
+		for i := range hsvs {
+			j := i
+			if j >= leds.NChannels {
+				j = leds.NChannels - (1 + i - leds.NChannels)
+			}
+			v := channels[j]
+			if v > float64(0xa0) {
+				v = float64(0xa0)
+			}
+			hsvs[i].V = 0x40 + uint8(v)
+		}
+
+		c.hal.Leds().HSV(0, hsvs...)
+		c.hal.Leds().Show()
+
 	}
 }
 
