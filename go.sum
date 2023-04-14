@@ -28,6 +28,8 @@ github.com/hoani/toot v0.0.0-20230413080901-8f3e9575a082 h1:aOKnpKDf3nyCEmVR8ii5
 github.com/hoani/toot v0.0.0-20230413080901-8f3e9575a082/go.mod h1:BY2bei88UucXBQXsCdXszemgUVVmVtQO9d+4iMUFpII=
 github.com/hoani/toot v0.0.0-20230413084445-3bfb7d13cb40 h1:D4CcnQOciDFy4I86Cql1qdebwaZTymXck1Dmk3fwSwo=
 github.com/hoani/toot v0.0.0-20230413084445-3bfb7d13cb40/go.mod h1:lujYq6Yam3iTZeyqs6j3COLRzmy53UPr6u9QmDBF9Vg=
+github.com/hoani/toot v0.0.0-20230414022104-6593810924b3 h1:saos7GsF1Qu+58iDc7bIo/kTYQTWIWy0uaSGZ/3I+7E=
+github.com/hoani/toot v0.0.0-20230414022104-6593810924b3/go.mod h1:lujYq6Yam3iTZeyqs6j3COLRzmy53UPr6u9QmDBF9Vg=
 github.com/icza/bitio v1.0.0/go.mod h1:0jGnlLAx8MKMr9VGnn/4YrvZiprkvBelsVIbA9Jjr9A=
 github.com/icza/mighty v0.0.0-20180919140131-cfd07d671de6/go.mod h1:xQig96I1VNBDIWGCdTt54nHt6EeI639SmHycLYL7FkA=
 github.com/jfreymuth/oggvorbis v1.0.1/go.mod h1:NqS+K+UXKje0FUYUPosyQ+XTVvjmVjps1aEZH1sumIk=
