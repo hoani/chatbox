@@ -12,6 +12,7 @@ import (
 
 	"github.com/hoani/chatbox/3rdparty/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
+	"github.com/hoani/chatbox/leds"
 	"github.com/hoani/toot"
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -133,31 +134,8 @@ func (c *chatbox) run() error {
 		Temperature: 1.0,
 	}
 
-	hsvs := []hal.HSV{}
-	for i := 0; i < 24; i++ {
-		hsvs = append(hsvs, hal.HSV{
-			H: uint8(i) * 10,
-			S: 0xFF,
-			V: 0x50,
-		})
-	}
-
 	for {
-		for {
-			if c.hal.Button() {
-				break
-			}
-
-			for i := range hsvs {
-				hsvs[i].H += 1
-			}
-
-			c.hal.Leds().HSV(0, hsvs...)
-			c.hal.Leds().Show()
-
-			time.Sleep(10 * time.Millisecond)
-
-		}
+		c.doStateReady()
 
 		c.hal.LCD().Write("Listening...", "release to stop", &hal.RGB{R: 200, G: 205, B: 0})
 
@@ -179,8 +157,53 @@ func (c *chatbox) run() error {
 		cmd := exec.Command("espeak", `"`+resp.Choices[0].Message.Content+`"`)
 		cmd.Run()
 
-		c.hal.LCD().Write("Press to start", "", &hal.RGB{R: 0, G: 205, B: 200})
 		req.Messages = append(req.Messages, resp.Choices[0].Message)
+
+	}
+}
+
+func (c *chatbox) doStateReady() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	c.hal.LCD().Write("Press to start", "", &hal.RGB{R: 0, G: 205, B: 200})
+
+	hsvs := []hal.HSV{}
+	for i := 0; i < 24; i++ {
+		hsvs = append(hsvs, hal.HSV{
+			H: uint8(i) * 10,
+			S: 0xFF,
+			V: 0x50,
+		})
+	}
+
+	v := leds.NewVisualizer()
+	go v.Start(ctx)
+
+	for {
+		if c.hal.Button() {
+			break
+		}
+
+		time.Sleep(time.Millisecond)
+
+		channels := v.Channels()
+
+		for i := range hsvs {
+			// hsvs[i].H += 1
+			j := i
+			if j >= leds.NChannels {
+				j = leds.NChannels - (1 + i - leds.NChannels)
+			}
+			v := channels[j]
+			if v > 128.0 {
+				v = 128.0
+			}
+			hsvs[i].V = 0x40 + uint8(v)
+			c.hal.Debug(fmt.Sprintf("%#v\n", channels))
+		}
+
+		c.hal.Leds().HSV(0, hsvs...)
+		c.hal.Leds().Show()
 
 	}
 }

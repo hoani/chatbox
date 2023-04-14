@@ -6,7 +6,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/faiface/beep v1.1.0
-	github.com/hoani/toot v0.0.0-20230413080901-8f3e9575a082
+	github.com/hoani/toot v0.0.0-20230413084445-3bfb7d13cb40
 	github.com/pkg/errors v0.9.1
 	github.com/sashabaranov/go-openai v1.7.0
 	github.com/stianeikeland/go-rpio/v4 v4.6.0
