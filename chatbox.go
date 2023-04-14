@@ -184,12 +184,12 @@ func (c *chatbox) doStateReady() {
 			break
 		}
 
-		time.Sleep(5*time.Millisecond)
+		time.Sleep(20*time.Millisecond)
 
 		channels := v.Channels()
 
 		for i := range hsvs {
-			// hsvs[i].H += 1
+			hsvs[i].H += 1
 			j := i
 			if j >= leds.NChannels {
 				j = leds.NChannels - (1 + i - leds.NChannels)
