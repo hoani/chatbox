@@ -72,6 +72,52 @@ func TestSplitBrackets(t *testing.T) {
 	}
 }
 
+func TestSplitSentences(t *testing.T) {
+	testCases := []struct {
+		name     string
+		in       string
+		expected []string
+	}{
+		{
+			name:     "empty string",
+			in:       "",
+			expected: []string{},
+		},
+		{
+			name:     "no sentences",
+			in:       "hello world",
+			expected: []string{"hello world"},
+		},
+		{
+			name:     "one sentence",
+			in:       "hello world.",
+			expected: []string{"hello world."},
+		},
+		{
+			name:     "two sentences",
+			in:       "hello world. how are you today?",
+			expected: []string{"hello world.", "how are you today?"},
+		},
+		{
+			name:     "many sentences with punctuation",
+			in:       "How are you today? Leave me alone! I'm sorry.",
+			expected: []string{"How are you today?", "Leave me alone!", "I'm sorry."},
+		},
+		{
+			name:     "groups punctuation",
+			in:       "How are you today??? Leave me alone!!!!! I'm sorry...",
+			expected: []string{"How are you today???", "Leave me alone!!!!!", "I'm sorry..."},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := SplitSentences(tc.in)
+			require.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
 func TestSplitWidth(t *testing.T) {
 	testCases := []struct {
 		name     string

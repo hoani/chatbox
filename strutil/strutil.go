@@ -48,6 +48,33 @@ func SplitBrackets(input string) []string {
 	return result
 }
 
+func SplitSentences(input string) []string {
+	result := []string{}
+	current := ""
+	punctuation := ""
+	for _, c := range input {
+		token := string(c)
+		switch token {
+		case ".", "!", "?":
+			if punctuation == "" {
+				punctuation = token
+			}
+			current += token
+		default:
+			if punctuation != "" {
+				result = append(result, strings.TrimSpace(current))
+				current = ""
+				punctuation = ""
+			}
+			current += token
+		}
+	}
+	if current != "" {
+		return append(result, strings.TrimSpace(current))
+	}
+	return result
+}
+
 func SplitWidth(input string, width int) []string {
 	words := strings.Fields(input)
 	lines := []string{}

@@ -7,12 +7,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/faiface/beep"
 	"github.com/hoani/chatbox/3rdparty/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
 	"github.com/hoani/chatbox/leds"
+	"github.com/hoani/chatbox/strutil"
 	"github.com/hoani/toot"
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -314,6 +317,13 @@ func (c *chatbox) doStateThink() {
 }
 
 func (c *chatbox) doStateTalking() {
+	message := c.chat.Messages[len(c.chat.Messages)-1]
+	if message.Role != openai.ChatMessageRoleAssistant {
+		return // Oops, this isn't a response, best get out of here.
+	}
+	content := message.Content
+
+	// Ideally, we would use the audio out rather than microphone... but this works well anyway.
 	v := leds.NewVisualizer()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -321,23 +331,26 @@ func (c *chatbox) doStateTalking() {
 	defer v.Wait()
 	defer cancel()
 
+	hsvChan := make(chan hal.HSV)
+
 	go func() {
-		hsvs := []hal.HSV{}
-		for i := 0; i < 24; i++ {
-			hsvs = append(hsvs, hal.HSV{
-				H: 0x80,
-				S: 0x00,
-				V: 0x50,
-			})
+		baseHsv := hal.HSV{
+			H: 0x80,
+			S: 0x00,
+			V: 0x50,
 		}
+
+		hsvs := make([]hal.HSV, 24)
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
+			case baseHsv = <-hsvChan:
 			case <-time.After(time.Millisecond * 50):
 				channels := v.Channels()
 				for i := range hsvs {
+					hsvs[i] = baseHsv
 					hsvs[i].V = 0x50 + uint8(channels[i%leds.NChannels])
 				}
 
@@ -347,8 +360,29 @@ func (c *chatbox) doStateTalking() {
 		}
 	}()
 
-	c.hal.LCD().Write("Talking...", "", &hal.RGB{R: 0, G: 205, B: 100})
-
-	cmd := exec.Command("espeak", `"`+c.chat.Messages[len(c.chat.Messages)-1].Content+`"`)
-	cmd.Run()
+	c.hal.LCD().Write("   [Talking]   ", "", &hal.RGB{R: 0, G: 205, B: 100})
+	directives := strutil.SplitBrackets(content)
+	for _, directive := range directives {
+		sentences := strutil.SplitSentences(directive)
+		for _, sentence := range sentences {
+			parts := strutil.SplitWidth(sentence, 16)
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				exec.Command("espeak", "-z", `"`+sentence+`"`).Run()
+			}()
+			wpm := 175
+			mspw := int((60.0 * 1000.0) / float64(wpm))
+			for _, part := range parts {
+				part = strings.TrimSpace(part)
+				words := strings.Count(part, " ") + 1
+				padding := (16 - len(part)) / 2
+				part = strings.Repeat(" ", padding) + part + strings.Repeat(" ", padding)
+				c.hal.LCD().Write("   [Talking]   ", part, &hal.RGB{R: 0, G: 205, B: 100})
+				time.Sleep(time.Millisecond * time.Duration(mspw*words))
+			}
+			wg.Wait()
+		}
+	}
 }
