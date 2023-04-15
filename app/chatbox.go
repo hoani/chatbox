@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/faiface/beep"
 	"github.com/hoani/chatbox/3rdparty/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
 	"github.com/hoani/chatbox/leds"
+	"github.com/hoani/chatbox/strutil"
 	"github.com/hoani/toot"
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -23,16 +25,18 @@ const (
 	stateListening
 	stateThinking
 	stateTalking
+	stateError
 )
 
 type chatbox struct {
-	openai      *openai.Client
-	hal         hal.Hal
-	wd          string
-	state       state
-	recordingCh chan string
-	chat        *openai.ChatCompletionRequest
-	espeakFlags map[string]string
+	openai       *openai.Client
+	hal          hal.Hal
+	wd           string
+	state        state
+	recordingCh  chan string
+	chat         *openai.ChatCompletionRequest
+	espeakFlags  map[string]string
+	errorMessage string
 }
 
 func NewChatBox(key string) (*chatbox, error) {
@@ -95,20 +99,33 @@ func (c *chatbox) Run() error {
 	}
 
 	for {
-		c.doStateReady()
-
-		c.doStateListen()
-
-		c.doStateThink()
-
-		c.doStateTalking()
-
+		c.state = c.doState()
 	}
 }
 
-func (c *chatbox) doStateReady() {
+func (c *chatbox) doState() state {
+	switch c.state {
+	case stateReady:
+		return c.doStateReady()
+	case stateListening:
+		return c.doStateListening()
+	case stateThinking:
+		return c.doStateThinking()
+	case stateTalking:
+		return c.doStateTalking()
+	case stateError:
+		return c.doStateError()
+	}
+	return stateReady
+}
+
+func (c *chatbox) doStateReady() state {
 	c.hal.LCD().Write("Press to start", "", hal.LCDBlue)
-	time.Sleep(time.Second) // We delay a little bit to allow for button debounce.
+
+	if c.hal.Button() {
+		time.Sleep(time.Millisecond * 10)
+	}
+	time.Sleep(time.Millisecond * 200) // We delay a little bit extra to allow for button debounce.
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -151,19 +168,19 @@ func (c *chatbox) doStateReady() {
 				v = float64(0xa0)
 			}
 			hsvs[i].V = 0x40 + uint8(v)
-			// c.hal.Debug(fmt.Sprintf("%#v\n", channels))
 		}
 
 		c.hal.Leds().HSV(0, hsvs...)
 		c.hal.Leds().Show()
 	}
+	return stateListening
 }
 
-func (c *chatbox) doStateListen() {
+func (c *chatbox) doStateListening() state {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	c.hal.LCD().Write("  [Listening]  ", "release to stop", hal.LCDBlue)
+	c.hal.LCD().Write("  [Listening]  ", "release to stop", hal.LCDGreen)
 
 	path := filepath.Join(c.wd, "test.wav")
 	f, err := os.Create(path)
@@ -238,11 +255,12 @@ func (c *chatbox) doStateListen() {
 
 		c.hal.Leds().HSV(0, hsvs...)
 		c.hal.Leds().Show()
-
 	}
+
+	return stateThinking
 }
 
-func (c *chatbox) doStateThink() {
+func (c *chatbox) doStateThinking() state {
 	c.hal.LCD().Write("  [Thinking]  ", "", hal.LCDBlue)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -287,11 +305,11 @@ func (c *chatbox) doStateThink() {
 	case path = <-c.recordingCh:
 		if path == "" {
 			c.hal.Debug("recording path is empty")
-			return
+			return stateReady
 		}
 	case <-time.After(time.Second * 5):
 		c.hal.Debug("timeout waiting for recording")
-		return
+		return stateReady
 	}
 
 	translation, err := c.openai.CreateTranslation(
@@ -302,7 +320,7 @@ func (c *chatbox) doStateThink() {
 		})
 	if err != nil {
 		c.hal.Debug(fmt.Sprintf("translation error: %#v\n", err))
-		return
+		return stateReady
 	}
 
 	c.hal.Debug(fmt.Sprintf("User: %s \n", translation.Text))
@@ -315,8 +333,32 @@ func (c *chatbox) doStateThink() {
 	resp, err := c.openai.CreateChatCompletion(context.Background(), *c.chat)
 	if err != nil {
 		c.hal.Debug(fmt.Sprintf("chat error: %#v\n", err))
-		return
+		return stateReady
 	}
 	c.hal.Debug(resp.Choices[0].Message.Content)
 	c.chat.Messages = append(c.chat.Messages, resp.Choices[0].Message)
+
+	return stateTalking
+}
+
+func (c *chatbox) doStateError() state {
+	parts := strutil.SplitWidth(c.errorMessage, 16)
+
+	wpm := 175
+	mspw := int((60.0 * 1000.0) / float64(wpm))
+	start := time.Now()
+	for {
+		if c.hal.Button() && time.Since(start) > time.Second {
+			break
+		}
+		for _, part := range parts {
+			part = strings.TrimSpace(part)
+			words := strings.Count(part, " ") + 1
+			padding := (16 - len(part)) / 2
+			part = strings.Repeat(" ", padding) + part
+			c.hal.LCD().Write("    [Error]    ", part, hal.LCDRed)
+			time.Sleep(time.Millisecond * time.Duration(mspw*words))
+		}
+	}
+	return stateReady
 }

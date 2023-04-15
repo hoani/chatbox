@@ -14,10 +14,10 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-func (c *chatbox) doStateTalking() {
+func (c *chatbox) doStateTalking() state {
 	message := c.chat.Messages[len(c.chat.Messages)-1]
 	if message.Role != openai.ChatMessageRoleAssistant {
-		return // Oops, this isn't a response, best get out of here.
+		return stateReady // Oops, this isn't a response, best get out of here.
 	}
 	content := message.Content
 
@@ -63,6 +63,8 @@ func (c *chatbox) doStateTalking() {
 	for _, directive := range directives {
 		c.processDirective(directive)
 	}
+
+	return stateReady
 }
 
 func (c *chatbox) processDirective(d string) {
@@ -113,7 +115,7 @@ func (c *chatbox) processSpeech(in string) {
 			words := strings.Count(part, " ") + 1
 			padding := (16 - len(part)) / 2
 			part = strings.Repeat(" ", padding) + part
-			c.hal.LCD().Write("   [Talking]   ", part, hal.LCDBlue)
+			c.hal.LCD().Write("   [Talking]   ", part, hal.LCDAqua)
 			time.Sleep(time.Millisecond * time.Duration(mspw*words))
 		}
 		wg.Wait()
