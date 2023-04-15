@@ -5,6 +5,7 @@ Description="Chatbox companion"
 User='$SUDO_USER'
 WorkingDirectory='$(pwd)'
 ExecStart='$(pwd)'/chatbox
+StandardError=null
 Restart=always
 Environment="OPENAI_KEY='$OPENAI_KEY'"
 

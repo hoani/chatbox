@@ -48,5 +48,5 @@ func (h *hal) LCD() LCD {
 }
 
 func (h *hal) Debug(s string) {
-	fmt.Printf(s)
+	fmt.Println(s)
 } 

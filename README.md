@@ -16,7 +16,7 @@ export OPENAI_KEY=<my-openai-key>
 
 On a Macbook, there is a TUI (terminal UI) which simulates some of the hardware such as LEDs, LCD and Pushbutton. It will use your computers microphone and speaker hardware, just like the raspberry pi does.
 
-![TUI](./docs/chatbox-tui.gif)
+![TUI](./docs/chatbox-tui.gif | width=100)
 
 ### Raspberry Pi Development
 
@@ -34,7 +34,7 @@ To deploy this on your Raspberry Pi, run:
 
 ```
 go build .
-sudo ./addService.sh
+sudo -E ./service/addService.sh
 sudo systemctl start chatbox
 ```
 
