@@ -4,7 +4,7 @@ import (
 	"os/exec"
 )
 
-type lcd struct{
+type lcd struct {
 	line1 string
 	line2 string
 	color LCDColor
@@ -17,19 +17,23 @@ func newLCD() *lcd {
 }
 
 func (l *lcd) Write(line1, line2 string, color LCDColor) {
-	args := []string{"lcd/lcd.py"}
+	changed := false
 	if l.line1 != line1 {
-		args = append(args, "--line1", line1)
+		changed = true
 		l.line1 = line1
 	}
 	if l.line2 != line2 {
-		args = append(args, "--line2", line2)
+		changed = true
 		l.line2 = line2
 	}
 	if l.color != color {
+		changed = true
 		l.color = color
 	}
-	if len(args) > 1 {
+	if changed {
+		args := []string{"lcd/lcd.py"}
+		args = append(args, "--line1", l.line1)
+		args = append(args, "--line2", l.line2)
 		args = append(args, "--rgb", LCDColorToString(l.color))
 		exec.Command("python3", args...).Run()
 	}
