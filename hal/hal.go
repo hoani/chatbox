@@ -1,5 +1,14 @@
 package hal
 
+type LCDColor uint
+
+const (
+	LCDRed LCDColor = iota
+	LCDGreen
+	LCDAqua
+	LCDBlue
+)
+
 type HSV struct {
 	H, S, V uint8
 }
@@ -16,7 +25,7 @@ type Leds interface {
 }
 
 type LCD interface {
-	Write(line1, line2 string, color *RGB)
+	Write(line1, line2 string, color LCDColor)
 }
 
 type Hal interface {

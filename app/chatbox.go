@@ -1,21 +1,17 @@
-package main
+package app
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/faiface/beep"
 	"github.com/hoani/chatbox/3rdparty/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
 	"github.com/hoani/chatbox/leds"
-	"github.com/hoani/chatbox/strutil"
 	"github.com/hoani/toot"
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -36,6 +32,7 @@ type chatbox struct {
 	state       state
 	recordingCh chan string
 	chat        *openai.ChatCompletionRequest
+	espeakFlags map[string]string
 }
 
 func NewChatBox(key string) (*chatbox, error) {
@@ -66,7 +63,7 @@ func NewChatBox(key string) (*chatbox, error) {
 	h.Leds().HSV(0, hsvs...)
 	h.Leds().Show()
 
-	h.LCD().Write("Hello Chatbot", "Press to start", &hal.RGB{R: 100, G: 105, B: 200})
+	h.LCD().Write("Hello Chatbot", "Press to start", hal.LCDBlue)
 
 	return &chatbox{
 		openai:      c,
@@ -74,18 +71,24 @@ func NewChatBox(key string) (*chatbox, error) {
 		wd:          wd,
 		state:       stateReady,
 		recordingCh: make(chan string),
+		espeakFlags: map[string]string{},
 	}, nil
 }
 
-func (c *chatbox) run() error {
+func (c *chatbox) Run() error {
 	c.chat = &openai.ChatCompletionRequest{
 		Model: openai.GPT3Dot5Turbo,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role: openai.ChatMessageRoleSystem,
-				Content: "respond as an exaggerated Jim Carrey whose soul has been trapped inside a raspberry pi. " +
+				Content: "respond as an exaggerated Jim Carrey. " +
+					"your soul is trapped inside a raspberry pi. " +
 					"When possible keep responses to less than three sentences. " +
-					"Your key objective is to have interesting conversations. ",
+					"Your key objective is to have interesting conversations. " +
+					"Your output is parsed through espeak. " +
+					"you may prefix responses with [voice:<value>] to change your voice to one of <m1,m2,m3,m4,f1,f2,f3,f4>. " +
+					"at any time change pitch with [pitch:<value>] in the range of 25 to 75 - lower values give a deeper voice. " +
+					"always keep your pitch and voice consistent with the personality of your character. ",
 			},
 		},
 		Temperature: 1.0,
@@ -104,9 +107,11 @@ func (c *chatbox) run() error {
 }
 
 func (c *chatbox) doStateReady() {
+	c.hal.LCD().Write("Press to start", "", hal.LCDBlue)
+	time.Sleep(time.Second) // We delay a little bit to allow for button debounce.
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	c.hal.LCD().Write("Press to start", "", &hal.RGB{R: 0, G: 205, B: 200})
 
 	hsvs := []hal.HSV{}
 	for i := 0; i < 24; i++ {
@@ -158,7 +163,7 @@ func (c *chatbox) doStateListen() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	c.hal.LCD().Write("Listening...", "release to stop", &hal.RGB{R: 200, G: 205, B: 0})
+	c.hal.LCD().Write("  [Listening]  ", "release to stop", hal.LCDBlue)
 
 	path := filepath.Join(c.wd, "test.wav")
 	f, err := os.Create(path)
@@ -238,7 +243,7 @@ func (c *chatbox) doStateListen() {
 }
 
 func (c *chatbox) doStateThink() {
-	c.hal.LCD().Write("Thinking...", "", &hal.RGB{R: 0, G: 205, B: 200})
+	c.hal.LCD().Write("  [Thinking]  ", "", hal.LCDBlue)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -312,78 +317,6 @@ func (c *chatbox) doStateThink() {
 		c.hal.Debug(fmt.Sprintf("chat error: %#v\n", err))
 		return
 	}
-	c.hal.Debug(fmt.Sprintf("%s", resp.Choices[0].Message.Content))
+	c.hal.Debug(resp.Choices[0].Message.Content)
 	c.chat.Messages = append(c.chat.Messages, resp.Choices[0].Message)
-}
-
-func (c *chatbox) doStateTalking() {
-	message := c.chat.Messages[len(c.chat.Messages)-1]
-	if message.Role != openai.ChatMessageRoleAssistant {
-		return // Oops, this isn't a response, best get out of here.
-	}
-	content := message.Content
-
-	// Ideally, we would use the audio out rather than microphone... but this works well anyway.
-	v := leds.NewVisualizer()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	go v.Start(ctx)
-	defer v.Wait()
-	defer cancel()
-
-	hsvChan := make(chan hal.HSV)
-
-	go func() {
-		baseHsv := hal.HSV{
-			H: 0x80,
-			S: 0x00,
-			V: 0x50,
-		}
-
-		hsvs := make([]hal.HSV, 24)
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case baseHsv = <-hsvChan:
-			case <-time.After(time.Millisecond * 50):
-				channels := v.Channels()
-				for i := range hsvs {
-					hsvs[i] = baseHsv
-					hsvs[i].V = 0x50 + uint8(channels[i%leds.NChannels])
-				}
-
-				c.hal.Leds().HSV(0, hsvs...)
-				c.hal.Leds().Show()
-			}
-		}
-	}()
-
-	c.hal.LCD().Write("   [Talking]   ", "", &hal.RGB{R: 0, G: 205, B: 100})
-	directives := strutil.SplitBrackets(content)
-	for _, directive := range directives {
-		sentences := strutil.SplitSentences(directive)
-		for _, sentence := range sentences {
-			parts := strutil.SplitWidth(sentence, 16)
-			wg := sync.WaitGroup{}
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				exec.Command("espeak", "-z", `"`+sentence+`"`).Run()
-			}()
-			wpm := 175
-			adjustment := 0.8 // espeak is a bit faster than the wpm would suggest.
-			mspw := int(adjustment * (60.0 * 1000.0) / float64(wpm))
-			for _, part := range parts {
-				part = strings.TrimSpace(part)
-				words := strings.Count(part, " ") + 1
-				padding := (16 - len(part)) / 2
-				part = strings.Repeat(" ", padding) + part + strings.Repeat(" ", padding)
-				c.hal.LCD().Write("   [Talking]   ", part, &hal.RGB{R: 0, G: 205, B: 100})
-				time.Sleep(time.Millisecond * time.Duration(mspw*words))
-			}
-			wg.Wait()
-		}
-	}
 }

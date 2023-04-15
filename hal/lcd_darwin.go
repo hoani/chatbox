@@ -14,17 +14,28 @@ func newLCD(prog *tea.Program) *lcd {
 	return &lcd{prog: prog}
 }
 
-func (l *lcd) Write(line1, line2 string, color *RGB) {
-	var lcdColor *lipgloss.Color
-	if color != nil {
-		c := RGBtoLipglossColor(*color)
-		lcdColor = &c
-	}
+func (l *lcd) Write(line1, line2 string, color LCDColor) {
+	c := LCDtoLipglossColor(color)
 	l.prog.Send(ui.LCDUpdate{
-		Color: lcdColor,
+		Color: &c,
 		Lines: [2]string{
 			line1 + " ",
 			line2 + " ",
 		},
 	})
+}
+
+func LCDtoLipglossColor(in LCDColor) lipgloss.Color {
+	switch in {
+	case LCDRed:
+		return lipgloss.Color("#ff0000")
+	case LCDGreen:
+		return lipgloss.Color("#00ff00")
+	case LCDAqua:
+		return lipgloss.Color("#00ffff")
+	case LCDBlue:
+		return lipgloss.Color("#0000ff")
+	default:
+		return lipgloss.Color("#444444")
+	}
 }
