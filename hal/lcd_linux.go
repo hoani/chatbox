@@ -1,19 +1,38 @@
 package hal
 
 import (
-	"fmt"
 	"os/exec"
 )
 
-type lcd struct{}
+type lcd struct{
+	line1 string
+	line2 string
+	color LCDColor
+}
 
 func newLCD() *lcd {
-	return &lcd{}
+	return &lcd{
+		color: LCDRed,
+	}
 }
 
 func (l *lcd) Write(line1, line2 string, color LCDColor) {
-	args := []string{"lcd/lcd.py", "--line1", line1, "--line2", line2, "--rgb", LCDColorToString(color)}
-	exec.Command("python3", args...).Run()
+	args := []string{"lcd/lcd.py"}
+	if l.line1 != line1 {
+		args = append(args, "--line1", line1)
+		l.line1 = line1
+	}
+	if l.line2 != line2 {
+		args = append(args, "--line2", line2)
+		l.line2 = line2
+	}
+	if l.color != color {
+		args = append(args, "--rgb", LCDColorToString(color))
+		l.color = color
+	}
+	if len(args) > 1 {
+		exec.Command("python3", args...).Run()
+	}
 }
 
 func LCDColorToString(color LCDColor) string {
