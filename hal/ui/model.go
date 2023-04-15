@@ -66,7 +66,7 @@ func NewUI() *Model {
 		},
 		lcdStyle: lipgloss.NewStyle().
 			ColorWhitespace(true).
-			MaxWidth(4 + LCDWidth).MarginLeft(2).MarginRight(2).
+			MaxWidth(4 + LCDWidth).PaddingLeft(2).PaddingRight(2).
 			Background(lcdColor).
 			Foreground(lipgloss.Color("#eeeeee")),
 		width: 100,
@@ -140,8 +140,8 @@ func (m *Model) ViewLEDs() string {
     %s         %s
   %s             %s
 %s                 %s
-%s                 %s%s
-%s                 %s%s
+%s                 %s  %s
+%s                 %s  %s
 %s                 %s
   %s             %s
     %s         %s
