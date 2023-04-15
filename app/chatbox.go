@@ -29,7 +29,7 @@ type chatbox struct {
 	recordingCh  chan string
 	chat         *openai.ChatCompletionRequest
 	espeakFlags  map[string]string
-	errorMessage string
+	errorMessage [2]string
 	lastChat     time.Time
 }
 
@@ -41,12 +41,12 @@ func NewChatBox(key string) (*chatbox, error) {
 
 	h, err := hal.NewHal()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	wd, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	hsvs := []hal.HSV{}

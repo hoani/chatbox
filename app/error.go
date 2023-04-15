@@ -9,15 +9,14 @@ import (
 
 func (c *chatbox) doStateError() state {
 	start := time.Now()
-	msg := strings.Repeat(" ", 16) + c.errorMessage + strings.Repeat(" ", 16)
 	for {
 		if c.hal.Button() && time.Since(start) > time.Second {
 			break
 		}
 		time.Sleep(time.Millisecond * 10)
-		start := int(time.Since(start)/(time.Millisecond*100)) % (len(msg) - 16)
+		start := int(time.Since(start)/(time.Millisecond*200)) % (len(msg) - 16)
 		end := start + 16
-		c.hal.LCD().Write("    [Error]    ", msg[start:end], hal.LCDRed)
+		c.hal.LCD().Write(c.errorMessage[0], c.errorMessage[1], hal.LCDRed)
 	}
 	return stateReady
 }

@@ -10,14 +10,6 @@ parser.add_argument("--rgb")
 
 args = parser.parse_args()
 
-if args.rgb:
-    [r,g,b]=args.rgb.split(',', 3)
-    r = int(r)
-    g = int(g)
-    b = int(b)
-
-    lcd.setRGB(r, g, b)
-
 if args.line1:
     lcd.setCursor(0, 0)
     lcd.printout(args.line1)
@@ -25,4 +17,12 @@ if args.line1:
 if args.line2:
     lcd.setCursor(0, 1)
     lcd.printout(args.line2)
+
+if args.rgb:
+    [r,g,b]=args.rgb.split(',', 3)
+    r = int(r)
+    g = int(g)
+    b = int(b)
+
+    lcd.setRGB(r, g, b)
 

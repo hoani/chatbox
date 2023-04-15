@@ -272,7 +272,7 @@ func (d *decoder) Position() int {
 func (d *decoder) Seek(p int) error {
 	seeker, ok := d.r.(io.Seeker)
 	if !ok {
-		panic(fmt.Errorf("wav: seek: resource is not io.Seeker"))
+		return fmt.Errorf("wav: seek: resource is not io.Seeker")
 	}
 	if p < 0 || d.Len() < p {
 		return fmt.Errorf("wav: seek position %v out of range [%v, %v]", p, 0, d.Len())

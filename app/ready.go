@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/hoani/chatbox/hal"
@@ -32,11 +31,7 @@ func (c *chatbox) doStateReady() state {
 	}
 
 	v := leds.NewVisualizer()
-	go func() {
-		if err := v.Start(ctx); err != nil {
-			panic(err)
-		}
-	}()
+	go v.Start(ctx)
 	defer v.Wait()
 
 	for {

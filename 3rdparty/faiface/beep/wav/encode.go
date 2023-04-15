@@ -68,7 +68,7 @@ func Encode(w io.WriteSeeker, s beep.Streamer, format beep.Format) (err error) {
 				buf = buf[format.EncodeSigned(buf, sample):]
 			}
 		default:
-			panic(fmt.Errorf("wav: encode: invalid precision: %d", format.Precision))
+			return fmt.Errorf("wav: encode: invalid precision: %d", format.Precision)
 		}
 		nn, err := bw.Write(buffer[:n*format.Width()])
 		if err != nil {

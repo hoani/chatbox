@@ -27,10 +27,10 @@ func (l *lcd) Write(line1, line2 string, color LCDColor) {
 		l.line2 = line2
 	}
 	if l.color != color {
-		args = append(args, "--rgb", LCDColorToString(color))
 		l.color = color
 	}
 	if len(args) > 1 {
+		args = append(args, "--rgb", LCDColorToString(l.color))
 		exec.Command("python3", args...).Run()
 	}
 }
