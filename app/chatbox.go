@@ -69,7 +69,9 @@ func NewChatBox(key string) (*chatbox, error) {
 		wd:          wd,
 		state:       stateReady,
 		recordingCh: make(chan string),
-		espeakFlags: map[string]string{},
+		espeakFlags: map[string]string{
+			"-v": "m7",
+		},
 	}, nil
 }
 

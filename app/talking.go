@@ -86,10 +86,6 @@ func (c *chatbox) processCommandBlock(block string) {
 			continue
 		}
 		switch parts[0] {
-		case "voice":
-			if isValidVoice(parts[1]) {
-				c.espeakFlags["-v"] = parts[1]
-			}
 		case "pitch":
 			if isValidPitch(parts[1]) {
 				c.espeakFlags["-p"] = parts[1]
@@ -130,12 +126,6 @@ func (c *chatbox) speak(sentence string) {
 	}
 	// c.hal.Debug(strings.Join(args, " "))
 	exec.Command("espeak", args...).Run()
-}
-
-const validVoices = "m1 m2 m3 m4 f1 f2 f3 f4"
-
-func isValidVoice(in string) bool {
-	return strings.Contains(validVoices, in)
 }
 
 func isValidPitch(in string) bool {

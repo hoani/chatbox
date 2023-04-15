@@ -21,8 +21,6 @@ func (c *chatbox) doStateListening() state {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	c.hal.LCD().Write("  [Listening]  ", "release to stop", hal.LCDGreen)
-
 	path := filepath.Join(c.wd, "test.wav")
 	f, err := os.Create(path)
 	if err != nil {
@@ -69,7 +67,7 @@ func (c *chatbox) doStateListening() state {
 	)
 	go v.Start(ctx)
 
-	// h.Debug(fmt.Sprintf("%#v\n", m.DeviceInfo()))
+	// c.hal.Debug(fmt.Sprintf("%#v\n", m.DeviceInfo()))
 
 	if err := m.Start(ctx); err != nil {
 		c.errorMessage = [2]string{
@@ -79,6 +77,8 @@ func (c *chatbox) doStateListening() state {
 		c.hal.Debug(err.Error())
 		return stateError
 	}
+
+	c.hal.LCD().Write("  [Listening]  ", "release to stop", hal.LCDGreen)
 
 	hsvs := []hal.HSV{}
 	for i := 0; i < 24; i++ {

@@ -34,8 +34,18 @@ To deploy this on your Raspberry Pi, run:
 
 ```
 go build .
-sudo -E ./service/addService.sh
-sudo systemctl start chatbox
+./service/addService.sh
+systemctl --user start chatbox
+```
+
+To make it run on boot:
+```
+systemctl --user enable chatbox
+```
+
+To check logs:
+```
+journalctl --user -u chatbox --since "10 minutes ago"
 ```
 
 The hardware I run this on is a Rasberry Pi 4B 2GB... hopefully there are no memory leaks.
