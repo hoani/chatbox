@@ -44,8 +44,8 @@ func LCDColorToString(color LCDColor) string {
 	case LCDAqua:
 		return "248,248,60"
 	case LCDBlue:
-		return "200,200,200"
+		return "255,255,255"
 	default:
-		return "200,200,200"
+		return "255,255,255"
 	}
 }
