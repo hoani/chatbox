@@ -12,6 +12,11 @@ import (
 
 const NChannels = 12
 
+type Visualizer interface {
+	Channels() [NChannels]float64
+	Wait()
+}
+
 type Source struct {
 	Streamer   beep.Streamer
 	SampleRate beep.SampleRate

@@ -3,12 +3,15 @@ package app
 import (
 	"errors"
 	"os"
+	"time"
 
 	"github.com/hoani/chatbox/hal"
 	openai "github.com/sashabaranov/go-openai"
 )
 
 type state int
+
+const buttonDebounce = time.Millisecond * 50
 
 const (
 	stateReady state = iota
@@ -27,6 +30,7 @@ type chatbox struct {
 	chat         *openai.ChatCompletionRequest
 	espeakFlags  map[string]string
 	errorMessage string
+	lastChat     time.Time
 }
 
 func NewChatBox(key string) (*chatbox, error) {
@@ -70,22 +74,7 @@ func NewChatBox(key string) (*chatbox, error) {
 }
 
 func (c *chatbox) Run() error {
-	c.chat = &openai.ChatCompletionRequest{
-		Model: openai.GPT3Dot5Turbo,
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role: openai.ChatMessageRoleSystem,
-				Content: "Respond as an exaggerated Jim Carrey whose soul is trapped inside a raspberry Pi. " +
-					"When possible keep responses to less than three sentences. " +
-					"Your key objective is to have interesting conversations. " +
-					"Your output is parsed through espeak. " +
-					"you may prefix responses with [voice:<value>] to change your voice to one of <m1,m2,m3,m4,f1,f2,f3,f4>. " +
-					"at any time change pitch with [pitch:<value>] in the range of 25 to 75 - lower values give a deeper voice. " +
-					"always keep your pitch and voice consistent with the personality of your character. ",
-			},
-		},
-		Temperature: 1.0,
-	}
+	c.chat = c.newChatRequest()
 
 	for {
 		c.state = c.doState()

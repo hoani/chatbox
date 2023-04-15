@@ -73,18 +73,40 @@ func (c *chatbox) doStateListening() state {
 		})
 	}
 
+	voicePowerEstimate := 0.0
+
 	for {
+		if time.Since(start) > 2*time.Minute {
+			m.Close()
+			c.errorMessage = "recording is too long"
+			return stateError
+		}
 		if !c.hal.Button() {
+			if time.Since(start) < buttonDebounce {
+				continue // Allow for debounce.
+			}
 			if time.Since(start) < time.Second {
 				m.Close()
 				c.errorMessage = "recording is too short"
 				return stateError
 			}
+			averagePowerEstimate := voicePowerEstimate / time.Since(start).Seconds()
+			if averagePowerEstimate < 10.0 {
+				m.Close()
+				c.errorMessage = fmt.Sprintf("recording is too quiet %f", averagePowerEstimate)
+				return stateError
+			}
 			break
 		}
-		time.Sleep(time.Millisecond)
+
+		time.Sleep(time.Millisecond * 20)
 
 		channels := v.Channels()
+
+		N := len(channels) / 4
+		for i := 0; i < N; i++ {
+			voicePowerEstimate += 0.02 * channels[i] / float64(N)
+		}
 
 		for i := range hsvs {
 			j := i

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hoani/chatbox/hal"
+	"github.com/hoani/chatbox/lcd"
 	"github.com/hoani/chatbox/leds"
 	"github.com/hoani/chatbox/strutil"
 	openai "github.com/sashabaranov/go-openai"
@@ -58,7 +59,7 @@ func (c *chatbox) doStateTalking() state {
 		}
 	}()
 
-	c.hal.LCD().Write("   [Talking]   ", "", hal.LCDBlue)
+	c.hal.LCD().Write(lcd.Pad("[Talking]"), "", hal.LCDBlue)
 	directives := strutil.SplitBrackets(content)
 	for _, directive := range directives {
 		c.processDirective(directive)
@@ -115,7 +116,7 @@ func (c *chatbox) processSpeech(in string) {
 			words := strings.Count(part, " ") + 1
 			padding := (16 - len(part)) / 2
 			part = strings.Repeat(" ", padding) + part
-			c.hal.LCD().Write("   [Talking]   ", part, hal.LCDAqua)
+			c.hal.LCD().Write(lcd.Pad("[Talking]"), part, hal.LCDAqua)
 			time.Sleep(time.Millisecond * time.Duration(mspw*words))
 		}
 		wg.Wait()

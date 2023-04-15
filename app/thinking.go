@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/hoani/chatbox/hal"
+	"github.com/hoani/chatbox/lcd"
 	openai "github.com/sashabaranov/go-openai"
 )
 
 func (c *chatbox) doStateThinking() state {
-	c.hal.LCD().Write("  [Thinking]  ", "", hal.LCDBlue)
+	c.hal.LCD().Write(lcd.Pad("[Thinking]"), "", hal.LCDBlue)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -79,13 +80,17 @@ func (c *chatbox) doStateThinking() state {
 		Content: translation.Text,
 	})
 
+	c.refreshChatRequest()
 	resp, err := c.openai.CreateChatCompletion(context.Background(), *c.chat)
 	if err != nil {
 		c.hal.Debug(fmt.Sprintf("chat error: %#v\n", err))
+		c.chat.Messages = c.chat.Messages[:len(c.chat.Messages)-1] // Remove the last message.
 		return stateReady
 	}
+
 	c.hal.Debug(resp.Choices[0].Message.Content)
 	c.chat.Messages = append(c.chat.Messages, resp.Choices[0].Message)
+	c.lastChat = time.Now() // Success, update last chat time.
 
 	return stateTalking
 }
