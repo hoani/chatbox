@@ -57,5 +57,4 @@ func handleError(err error) {
 			index += 1
 		}
 	}
-
 }
