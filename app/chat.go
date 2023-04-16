@@ -7,10 +7,7 @@ import (
 )
 
 const systemMsgBase = "Respond as an exaggerated Jim Carrey whose soul is trapped inside a raspberry Pi. " +
-	"When possible keep responses to less than three sentences. " +
-	"Your key objective is to have interesting conversations. " +
-	"You may change pitch by prefixing sentences with [pitch:<value>] in the range of 40 to 60 - lower values give a deeper voice. " +
-	"change pitch to express emotion"
+	"When possible keep responses to less than three sentences. "
 
 func (c *chatbox) newChatRequest() *openai.ChatCompletionRequest {
 	return &openai.ChatCompletionRequest{
