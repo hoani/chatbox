@@ -10,6 +10,8 @@ import (
 	"github.com/hoani/chatbox/lcd"
 )
 
+const errorLCDUpdateRate = time.Millisecond * 100
+
 func (c *chatbox) doStateError() state {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -42,16 +44,21 @@ func (c *chatbox) doStateError() state {
 
 	msg := strings.Repeat(" ", 16) + c.errorMessage + strings.Repeat(" ", 16)
 	index := 0
+	lcdLast := time.Now().Add(-errorLCDUpdateRate)
+	start := time.Now()
 
-	time.Sleep(time.Second)
 	for {
-		if c.hal.Button() {
+		if time.Since(lcdLast) >= time.Millisecond * 100 {
+			lcdLast.Add(time.Millisecond * 100)
+			c.hal.LCD().Write(lcd.Pad("[error]"), msg[index:index+15], hal.LCDRed)
+			index = (index + 1) % (len(msg) - 16)
+		}
+
+		if c.hal.Button() && time.Since(start) > time.Second{
 			break
 		}
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 10)
 
-		c.hal.LCD().Write(lcd.Pad("[error]"), msg[index:index+15], hal.LCDRed)
-		index = (index + 1) % (len(msg) - 16)
 	}
 	return stateReady
 }
