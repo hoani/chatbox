@@ -4,8 +4,10 @@ import (
 	"context"
 	"math"
 	"time"
+	"strings"
 
 	"github.com/hoani/chatbox/hal"
+	"github.com/hoani/chatbox/lcd"
 )
 
 func (c *chatbox) doStateError() state {
@@ -38,13 +40,18 @@ func (c *chatbox) doStateError() state {
 		}
 	}()
 
-	c.hal.LCD().Write(c.errorMessage[0], c.errorMessage[1], hal.LCDRed)
+	msg := strings.Repeat(" ", 16) + c.errorMessage + strings.Repeat(" ", 16)
+	index := 0
+
 	time.Sleep(time.Second)
 	for {
 		if c.hal.Button() {
 			break
 		}
 		time.Sleep(time.Millisecond * 100)
+
+		c.hal.LCD().Write(lcd.Pad("[error]"), msg[index:index+15], hal.LCDRed)
+		index = (index + 1) % (len(msg) - 16)
 	}
 	return stateReady
 }

@@ -138,9 +138,7 @@ class RGB1602:
     # 0010 0000 -> 0x20  (DMBLNK to 1, ie blinky mode)
     self.setReg(REG_MODE2, 0x20)
     
-
-    
-    self.setColorWhite()
+    # self.setColorWhite()
 
   def setColorWhite(self):
     self.setRGB(255, 255, 255)

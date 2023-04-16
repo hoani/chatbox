@@ -10,7 +10,6 @@ import (
 	"github.com/faiface/beep"
 	"github.com/hoani/chatbox/3rdparty/faiface/beep/wav"
 	"github.com/hoani/chatbox/hal"
-	"github.com/hoani/chatbox/lcd"
 	"github.com/hoani/chatbox/leds"
 	"github.com/hoani/toot"
 )
@@ -24,19 +23,13 @@ func (c *chatbox) doStateListening() state {
 	path := filepath.Join(c.wd, "test.wav")
 	f, err := os.Create(path)
 	if err != nil {
-		c.errorMessage = [2]string{
-			lcd.Pad("unable to"),
-			lcd.Pad("record to file"),
-		}
+		c.errorMessage = "unable to record to file"
 		c.hal.Debug(err.Error())
 		return stateError
 	}
 	m, err := toot.NewDefaultMicrophone()
 	if err != nil {
-		c.errorMessage = [2]string{
-			lcd.Pad("unable to"),
-			lcd.Pad("open mic"),
-		}
+		c.errorMessage = "unable to open mic"
 		c.hal.Debug(err.Error())
 		return stateError
 	}
@@ -70,10 +63,7 @@ func (c *chatbox) doStateListening() state {
 	// c.hal.Debug(fmt.Sprintf("%#v\n", m.DeviceInfo()))
 
 	if err := m.Start(ctx); err != nil {
-		c.errorMessage = [2]string{
-			lcd.Pad("unable to"),
-			lcd.Pad("start mic"),
-		}
+		c.errorMessage = "unable to start mic"
 		c.hal.Debug(err.Error())
 		return stateError
 	}
@@ -94,10 +84,7 @@ func (c *chatbox) doStateListening() state {
 	for {
 		if time.Since(start) > 2*time.Minute {
 			m.Close()
-			c.errorMessage = [2]string{
-				lcd.Pad("recording is"),
-				lcd.Pad("too long"),
-			}
+			c.errorMessage = "recording is too long"
 			return stateError
 		}
 		if !c.hal.Button() {
@@ -106,19 +93,13 @@ func (c *chatbox) doStateListening() state {
 			}
 			if time.Since(start) < time.Second {
 				m.Close()
-				c.errorMessage = [2]string{
-					lcd.Pad("recording is"),
-					lcd.Pad("too short"),
-				}
+				c.errorMessage = "recording is too short"
 				return stateError
 			}
 			averagePowerEstimate := voicePowerEstimate / time.Since(start).Seconds()
 			if averagePowerEstimate < 10.0 {
 				m.Close()
-				c.errorMessage = [2]string{
-					lcd.Pad("recording is"),
-					lcd.Pad(fmt.Sprintf("too quiet %.2f", averagePowerEstimate)),
-				}
+				c.errorMessage = fmt.Sprintf("recording is too quiet %.2f", averagePowerEstimate)
 				return stateError
 			}
 			break

@@ -53,7 +53,7 @@ func handleError(err error) {
 		case <-timer.C:
 			os.Exit(1)
 		case <-time.After(time.Second):
-			h.LCD().Write(msgs[index%len(msgs)], msgs[(index+1)%len(msgs)], hal.LCDBlue)
+			h.LCD().Write(msgs[index%len(msgs)], msgs[(index+1)%len(msgs)], hal.LCDRed)
 			index += 1
 		}
 	}

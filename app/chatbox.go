@@ -29,7 +29,7 @@ type chatbox struct {
 	recordingCh  chan string
 	chat         *openai.ChatCompletionRequest
 	espeakFlags  map[string]string
-	errorMessage [2]string
+	errorMessage string
 	lastChat     time.Time
 }
 
