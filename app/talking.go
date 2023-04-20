@@ -73,6 +73,11 @@ func (c *chatbox) processDirective(d string) {
 		c.processCommandBlock(d)
 		return
 	}
+	if strings.HasPrefix(d, "(") || strings.HasPrefix("*") {
+		c.espeakFlags["-v"] = "m7"
+	} else {
+		c.espeakFlags["-v"] = "en"
+	}
 	c.processSpeech(d)
 }
 
