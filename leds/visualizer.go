@@ -65,6 +65,7 @@ func (v *visualizer) Start(ctx context.Context) error {
 			return err
 		}
 		defer m.Close()
+		m.SetSampleRate(m.Format().SampleRate / 8) // Reduce samples to reduce CPU usage.
 		v.source = &Source{
 			Streamer:   m,
 			SampleRate: m.Format().SampleRate,
