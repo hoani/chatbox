@@ -2,7 +2,8 @@ package hal
 
 import (
 	"fmt"
-    
+	"os/exec"
+
 	"github.com/stianeikeland/go-rpio/v4"
 )
 
@@ -10,8 +11,8 @@ const buttonPin = 5
 
 type hal struct {
 	button rpio.Pin
-	leds *leds
-	lcd *lcd
+	leds   *leds
+	lcd    *lcd
 }
 
 func newHal() (*hal, error) {
@@ -30,8 +31,8 @@ func newHal() (*hal, error) {
 
 	return &hal{
 		button: button,
-		leds: leds,
-		lcd: newLCD(),
+		leds:   leds,
+		lcd:    newLCD(),
 	}, nil
 }
 
@@ -49,4 +50,8 @@ func (h *hal) LCD() LCD {
 
 func (h *hal) Debug(s string) {
 	fmt.Println(s)
-} 
+}
+
+func (h *hal) Shutdown() {
+	exec.Command("sudo", "shutdown", "now").Run()
+}

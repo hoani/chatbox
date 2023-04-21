@@ -54,13 +54,18 @@ func TestSplitBrackets(t *testing.T) {
 		},
 		{
 			name:     "curved and curly bracket complete",
-			in:       "hello (world) {how are you today?}",
-			expected: []string{"hello", "(world)", "{how are you today?}"},
+			in:       "hello (world) {how *are* you today?}",
+			expected: []string{"hello", "(world)", "{how *are* you today?}"},
 		},
 		{
 			name:     "nested brackets",
 			in:       "hello (world {how (are) you today?})",
 			expected: []string{"hello", "(world {how (are) you today?})"},
+		},
+		{
+			name:     "asterixes",
+			in:       "hello *world* how are you today?",
+			expected: []string{"hello", "*world*", "how are you today?"},
 		},
 	}
 

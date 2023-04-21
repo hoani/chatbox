@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hoani/chatbox/hal"
@@ -62,22 +63,26 @@ func (c *chatbox) doStateThinking() state {
 		return stateReady
 	}
 
-	translation, err := c.openai.CreateTranslation(
+	transcription, err := c.openai.CreateTranscription(
 		context.Background(),
 		openai.AudioRequest{
 			Model:    openai.Whisper1,
 			FilePath: path,
 		})
 	if err != nil {
-		c.hal.Debug(fmt.Sprintf("translation error: %#v\n", err))
+		c.hal.Debug(fmt.Sprintf("transcription error: %#v\n", err))
 		return stateReady
 	}
 
-	c.hal.Debug(fmt.Sprintf("User: %s \n", translation.Text))
+	c.hal.Debug(fmt.Sprintf("User: %s \n", transcription.Text))
+
+	if next, ok := c.handleUserCommands(transcription.Text); ok {
+		return next
+	}
 
 	c.chat.Messages = append(c.chat.Messages, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
-		Content: translation.Text,
+		Content: transcription.Text,
 	})
 
 	c.refreshChatRequest()
@@ -93,4 +98,17 @@ func (c *chatbox) doStateThinking() state {
 	c.lastChat = time.Now() // Success, update last chat time.
 
 	return stateTalking
+}
+
+func (c *chatbox) handleUserCommands(input string) (state, bool) {
+	input = strings.TrimSuffix(strings.ToLower(input), ".")
+	if input == "shutdown" || input == "shut down" {
+		return stateShutdown, true
+	}
+	if strings.HasPrefix(input, "change personality to ") {
+		c.personality = strings.TrimPrefix(input, "change personality to ")
+		return stateChange, true
+	}
+
+	return stateThinking, false
 }

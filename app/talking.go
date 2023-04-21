@@ -22,42 +22,12 @@ func (c *chatbox) doStateTalking() state {
 	}
 	content := message.Content
 
-	// Ideally, we would use the audio out rather than microphone... but this works well anyway.
-	v := leds.NewVisualizer()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	go v.Start(ctx)
-	defer v.Wait()
-	defer cancel()
-
-	hsvChan := make(chan hal.HSV)
-
-	go func() {
-		baseHsv := hal.HSV{
-			H: 0x80,
-			S: 0x00,
-			V: 0x50,
-		}
-
-		hsvs := make([]hal.HSV, 24)
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case baseHsv = <-hsvChan:
-			case <-time.After(time.Millisecond * 50):
-				channels := v.Channels()
-				for i := range hsvs {
-					hsvs[i] = baseHsv
-					hsvs[i].V = 0x50 + uint8(channels[i%leds.NChannels])
-				}
-
-				c.hal.Leds().HSV(0, hsvs...)
-				c.hal.Leds().Show()
-			}
-		}
-	}()
+	cleanup := c.runTalkingVisualizer(hal.HSV{
+		H: 0x80,
+		S: 0x00,
+		V: 0x50,
+	})
+	defer cleanup()
 
 	c.hal.LCD().Write(lcd.Pad("[Talking]"), "", hal.LCDBlue)
 	directives := strutil.SplitBrackets(content)
@@ -73,7 +43,7 @@ func (c *chatbox) processDirective(d string) {
 		c.processCommandBlock(d)
 		return
 	}
-	if strings.HasPrefix(d, "(") || strings.HasPrefix("*") {
+	if strings.HasPrefix(d, "(") || strings.HasPrefix(d, "*") {
 		c.espeakFlags["-v"] = "m7"
 	} else {
 		c.espeakFlags["-v"] = "en"
@@ -142,4 +112,37 @@ func isValidPitch(in string) bool {
 		return false
 	}
 	return true
+}
+
+func (c *chatbox) runTalkingVisualizer(baseHsv hal.HSV) (cleanup func()) {
+	// Ideally, we would use the audio out rather than microphone... but this works well anyway.
+	v := leds.NewVisualizer()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go v.Start(ctx)
+
+	go func() {
+		hsvs := make([]hal.HSV, 24)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Millisecond * 50):
+				channels := v.Channels()
+				for i := range hsvs {
+					hsvs[i] = baseHsv
+					hsvs[i].V = 0x50 + uint8(channels[i%leds.NChannels])
+				}
+
+				c.hal.Leds().HSV(0, hsvs...)
+				c.hal.Leds().Show()
+			}
+		}
+	}()
+
+	return func() {
+		cancel()
+		v.Wait()
+	}
 }

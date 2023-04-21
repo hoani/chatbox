@@ -82,3 +82,10 @@ In my build, I:
 * used a USB speaker which connected to the Pi with an audio jack
 * used a USB webcam as my microphone
 
+## Custom commands
+
+I got sick of rebooting my raspberry pi. So I have added a couple of control commands that you can speak to the chatbox:
+
+* `"shutdown"` will shutdown the raspberry pi... very helpful in avoiding corrupting your disk drives.
+* `"change personality to <Someone>"` will change the personality of the chatbox and reset your chat history
+

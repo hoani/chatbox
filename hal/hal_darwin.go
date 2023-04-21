@@ -1,6 +1,8 @@
 package hal
 
 import (
+	"os"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hoani/chatbox/hal/ui"
 )
@@ -42,4 +44,8 @@ func (h *hal) LCD() LCD {
 
 func (h *hal) Button() bool {
 	return h.m.ButtonState()
+}
+
+func (h *hal) Shutdown() {
+	os.Exit(0)
 }

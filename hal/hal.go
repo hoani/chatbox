@@ -33,6 +33,7 @@ type Hal interface {
 	Leds() Leds
 	LCD() LCD
 	Debug(string)
+	Shutdown()
 }
 
 func NewHal() (Hal, error) {

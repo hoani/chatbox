@@ -18,6 +18,8 @@ const (
 	stateListening
 	stateThinking
 	stateTalking
+	stateShutdown
+	stateChange
 	stateError
 )
 
@@ -31,6 +33,7 @@ type chatbox struct {
 	espeakFlags  map[string]string
 	errorMessage string
 	lastChat     time.Time
+	personality  string
 }
 
 func NewChatBox(key string) (*chatbox, error) {
@@ -95,6 +98,10 @@ func (c *chatbox) doState() state {
 		return c.doStateTalking()
 	case stateError:
 		return c.doStateError()
+	case stateShutdown:
+		return c.doStateShutdown()
+	case stateChange:
+		return c.doStateChange()
 	}
 	return stateReady
 }

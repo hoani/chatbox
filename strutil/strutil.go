@@ -18,7 +18,7 @@ func SplitBrackets(input string) []string {
 	for _, c := range input {
 		token := string(c)
 		switch token {
-		case "(", "[", "{", "<", "*":
+		case "(", "[", "{", "<":
 			if depth == 0 {
 				brace = token
 				if current := strings.TrimSpace(current); current != "" {
@@ -30,7 +30,7 @@ func SplitBrackets(input string) []string {
 			if token == brace {
 				depth++
 			}
-		case ")", "]", "}", ">", "*":
+		case ")", "]", "}", ">":
 			current += string(c)
 			if depth > 0 && braceMap[token] == brace {
 				depth--
@@ -38,6 +38,22 @@ func SplitBrackets(input string) []string {
 					result = append(result, strings.TrimSpace(current))
 					current = ""
 				}
+			}
+		case "*":
+			if depth == 0 {
+				brace = token
+				if current := strings.TrimSpace(current); current != "" {
+					result = append(result, current)
+				}
+				current = token
+				depth = 1
+			} else if depth == 1 && brace == token {
+				current += token
+				result = append(result, strings.TrimSpace(current))
+				current = ""
+				depth = 0
+			} else {
+				current += token
 			}
 		default:
 			current += string(c)
