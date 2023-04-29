@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"math"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/hoani/chatbox/hal"
 	"github.com/hoani/chatbox/lcd"
@@ -44,17 +44,17 @@ func (c *chatbox) doStateError() state {
 
 	msg := strings.Repeat(" ", 16) + c.errorMessage + strings.Repeat(" ", 16)
 	index := 0
-	lcdLast := time.Now().Add(-errorLCDUpdateRate)
+	lcdLast := time.Now()
 	start := time.Now()
 
 	for {
-		if time.Since(lcdLast) >= time.Millisecond * 100 {
-			lcdLast.Add(time.Millisecond * 100)
+		if time.Since(lcdLast) >= errorLCDUpdateRate {
+			lcdLast = lcdLast.Add(errorLCDUpdateRate)
 			c.hal.LCD().Write(lcd.Pad("[error]"), msg[index:index+15], hal.LCDRed)
 			index = (index + 1) % (len(msg) - 16)
 		}
 
-		if c.hal.Button() && time.Since(start) > time.Second{
+		if c.hal.Button() && time.Since(start) > time.Second {
 			break
 		}
 		time.Sleep(time.Millisecond * 10)

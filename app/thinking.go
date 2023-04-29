@@ -64,7 +64,7 @@ func (c *chatbox) doStateThinking() state {
 	}
 
 	transcription, err := c.openai.CreateTranscription(
-		context.Background(),
+		ctx,
 		openai.AudioRequest{
 			Model:    openai.Whisper1,
 			FilePath: path,
@@ -80,13 +80,19 @@ func (c *chatbox) doStateThinking() state {
 		return next
 	}
 
+	// Moderate messages.
+	if ok := c.moderator.Moderate(transcription.Text); !ok {
+		c.errorMessage = "I can't talk about this"
+		return stateError
+	}
+
 	c.chat.Messages = append(c.chat.Messages, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: transcription.Text,
 	})
 
 	c.refreshChatRequest()
-	resp, err := c.openai.CreateChatCompletion(context.Background(), *c.chat)
+	resp, err := c.openai.CreateChatCompletion(ctx, *c.chat)
 	if err != nil {
 		c.hal.Debug(fmt.Sprintf("chat error: %#v\n", err))
 		c.chat.Messages = c.chat.Messages[:len(c.chat.Messages)-1] // Remove the last message.

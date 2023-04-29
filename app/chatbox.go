@@ -34,6 +34,7 @@ type chatbox struct {
 	errorMessage string
 	lastChat     time.Time
 	personality  string
+	moderator    *moderator
 }
 
 func NewChatBox(key string) (*chatbox, error) {
@@ -75,6 +76,7 @@ func NewChatBox(key string) (*chatbox, error) {
 		espeakFlags: map[string]string{
 			"-v": "m7",
 		},
+		moderator: newModerator(c),
 	}, nil
 }
 
