@@ -1,5 +1,7 @@
 A chatbot companion project.
 
+<img src="./docs/chatbox.webp"  width="50%">
+
 Combines openai's chat and voice apis with hardware to make an AI you can talk to.
 
 ## Running
@@ -16,7 +18,8 @@ export OPENAI_KEY=<my-openai-key>
 
 On a Macbook, there is a TUI (terminal UI) which simulates some of the hardware such as LEDs, LCD and Pushbutton. It will use your computers microphone and speaker hardware, just like the raspberry pi does.
 
-![TUI](./docs/chatbox-tui.gif | width=100)
+<img src="./docs/chatbox-tui.gif"  width="60%">
+
 
 ### Raspberry Pi Development
 
@@ -70,12 +73,11 @@ The LCD used for this project is [LCD1602](https://www.waveshare.com/wiki/LCD160
 
 This is connected to the i2c pins 3 and 5, as well as GND and 3V3.
 
-![i2c lcd connections](./docs/i2cpinout.png)
+<img src="./docs/i2cpinout.png"  width="60%">
 
 A push button is used for signalling when it is time to talk to the chatbox. This is connected to GPIO 5 and GND:
 
-![pushbutton connections](./docs/pbpinout.png)
-
+<img src="./docs/pbpinout.png"  width="60%">
 
 In my build, I:
 * connected my serial-pixel arduino into a USB port
@@ -89,3 +91,22 @@ I got sick of rebooting my raspberry pi. So I have added a couple of control com
 * `"shutdown"` will shutdown the raspberry pi... very helpful in avoiding corrupting your disk drives.
 * `"change personality to <Someone>"` will change the personality of the chatbox and reset your chat history
 
+# Hardware
+
+## Bill of materials
+
+This list isn't exhaustive, a lot of the decisions I made were based around what is available to buy locally in New Zealand.
+
+* Raspberry Pi 4B/3B+
+    * any RAM is fine, this project uses only ~200Mb max 
+    * Raspberry Pi 3B+
+* Teensy 4.0
+    * Pretty much any other arduino that fits in the box also works
+* Genius SP-HF280 USB Speakers
+* Duinotech 24 LED 72mm circular board
+* [Sunfounder USB Microphone](https://www.sunfounder.com/products/mini-usb-microphone)
+* [Waveshare RGB 1602 LCD](https://www.waveshare.com/lcd1602-rgb-module.htm)
+* Push button
+
+There were also a bunch of 3D printed parts and so on. A video showing the build is on youtube:
+[![Chatbox: Leetware](https://img.youtube.com/vi/rzS5zLpd1os/0.jpg)](https://www.youtube.com/watch?v=rzS5zLpd1os)
