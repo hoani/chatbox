@@ -107,7 +107,7 @@ class RGB1602:
      
     time.sleep(0.05)
 
-    
+  def initializeRegisters(self):
     # Send function set command sequence
     self.command(LCD_FUNCTIONSET | self._showfunction)
     #delayMicroseconds(4500);  # wait more than 4.1ms
@@ -137,8 +137,6 @@ class RGB1602:
     # set MODE2 values
     # 0010 0000 -> 0x20  (DMBLNK to 1, ie blinky mode)
     self.setReg(REG_MODE2, 0x20)
-    
-    # self.setColorWhite()
 
   def setColorWhite(self):
     self.setRGB(255, 255, 255)
