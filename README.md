@@ -63,8 +63,16 @@ Make sure you enable I2C in the raspberry pi - this is needed for the LCD.
 
 ### Raspberry Pi Dependencies
 
+The basic audio libraries used are:
+
 ```
 apt install mpg123 portaudio19-dev espeak
+```
+
+In addition, I use `mbrolla` voices, which sound a little better than espeak's defaults:
+
+```
+apt install mbrolla mbrola-en1 mbrola-us1
 ```
 
 ### Raspberry Pi Connections

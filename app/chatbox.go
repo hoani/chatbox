@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hoani/chatbox/hal"
+	"github.com/hoani/chatbox/tts"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -30,11 +31,11 @@ type chatbox struct {
 	state        state
 	recordingCh  chan string
 	chat         *openai.ChatCompletionRequest
-	espeakFlags  map[string]string
 	errorMessage string
 	lastChat     time.Time
 	personality  string
 	moderator    *moderator
+	ttsCfg       tts.Config
 }
 
 func NewChatBox(key string) (*chatbox, error) {
@@ -73,10 +74,7 @@ func NewChatBox(key string) (*chatbox, error) {
 		wd:          wd,
 		state:       stateReady,
 		recordingCh: make(chan string),
-		espeakFlags: map[string]string{
-			"-v": "m7",
-		},
-		moderator: newModerator(c),
+		moderator:   newModerator(c),
 	}, nil
 }
 

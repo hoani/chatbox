@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -12,6 +10,7 @@ import (
 	"github.com/hoani/chatbox/lcd"
 	"github.com/hoani/chatbox/leds"
 	"github.com/hoani/chatbox/strutil"
+	"github.com/hoani/chatbox/tts"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -40,33 +39,14 @@ func (c *chatbox) doStateTalking() state {
 
 func (c *chatbox) processDirective(d string) {
 	if strings.HasPrefix(d, "[") {
-		c.processCommandBlock(d)
 		return
 	}
 	if strings.HasPrefix(d, "(") || strings.HasPrefix(d, "*") {
-		c.espeakFlags["-v"] = "m7"
+		c.ttsCfg.AltVoice = true
 	} else {
-		c.espeakFlags["-v"] = "en"
+		c.ttsCfg.AltVoice = false
 	}
 	c.processSpeech(d)
-}
-
-func (c *chatbox) processCommandBlock(block string) {
-	block = strings.TrimPrefix(block, "[")
-	block = strings.TrimSuffix(block, "]")
-	cmds := strings.Split(block, " ")
-	for _, cmd := range cmds {
-		parts := strings.Split(cmd, ":")
-		if len(parts) != 2 {
-			continue
-		}
-		switch parts[0] {
-		case "pitch":
-			if isValidPitch(parts[1]) {
-				c.espeakFlags["-p"] = parts[1]
-			}
-		}
-	}
 }
 
 func (c *chatbox) processSpeech(in string) {
@@ -79,7 +59,7 @@ func (c *chatbox) processSpeech(in string) {
 			defer wg.Done()
 			c.speak(sentence)
 		}()
-		wpm := 175
+		wpm := 155
 		adjustment := 0.6 // espeak is a bit faster than the wpm would suggest.
 		mspw := int(adjustment * (60.0 * 1000.0) / float64(wpm))
 		for _, part := range parts {
@@ -95,23 +75,7 @@ func (c *chatbox) processSpeech(in string) {
 }
 
 func (c *chatbox) speak(sentence string) {
-	args := []string{`"` + sentence + `"`, "-z"}
-	for flag, arg := range c.espeakFlags {
-		args = append(args, flag, arg)
-	}
-	// c.hal.Debug(strings.Join(args, " "))
-	exec.Command("espeak", args...).Run()
-}
-
-func isValidPitch(in string) bool {
-	v, err := strconv.ParseInt(in, 10, 64)
-	if err != nil {
-		return false
-	}
-	if v < 0 || v > 99 {
-		return false
-	}
-	return true
+	tts.Speak(sentence, tts.Config{Male: true})
 }
 
 func (c *chatbox) runTalkingVisualizer(baseHsv hal.HSV) (cleanup func()) {
