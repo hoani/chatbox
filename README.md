@@ -69,10 +69,10 @@ The basic audio libraries used are:
 apt install mpg123 portaudio19-dev espeak
 ```
 
-In addition, I use `mbrolla` voices, which sound a little better than espeak's defaults:
+In addition, I use `mbrola` voices, which sound a little better than espeak's defaults:
 
 ```
-apt install mbrolla mbrola-en1 mbrola-us1
+apt install mbrola mbrola-en1 mbrola-us1
 ```
 
 ### Raspberry Pi Connections
