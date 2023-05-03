@@ -1,9 +1,7 @@
 package hal
 
 import (
-	"os/exec"
-
-	"github.com/hoani/chatbox/lcd"
+	cmd "github.com/hoani/chatbox/lcd"
 )
 
 type lcd struct {
@@ -13,7 +11,7 @@ type lcd struct {
 }
 
 func newLCD() *lcd {
-	lcd.Cmd().Init().Run()
+	cmd.Cmd().Init().Run()
 
 	return &lcd{
 		color: LCDRed,
@@ -35,7 +33,7 @@ func (l *lcd) Write(line1, line2 string, color LCDColor) {
 		l.color = color
 	}
 	if changed {
-		lcd.Cmd().Line1(l.line1).Line2(l.line2).RGB(LCDColorToString(l.color)).Run()
+		cmd.Cmd().Line1(l.line1).Line2(l.line2).RGB(LCDColorToString(l.color)).Run()
 	}
 }
 

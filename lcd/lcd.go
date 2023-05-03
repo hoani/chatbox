@@ -17,11 +17,11 @@ func Cmd() cmd {
 }
 
 func (c cmd) Line1(in string) cmd {
-	return append(c, "--line1", in)
+	return append(c, "--line1", Whitespace(in))
 }
 
 func (c cmd) Line2(in string) cmd {
-	return append(c, "--line2", in)
+	return append(c, "--line2", Whitespace(in))
 }
 
 func (c cmd) RGB(in string) cmd {
@@ -46,4 +46,11 @@ func Pad(in string) string {
 	}
 	padding := (Width - len(in)) / 2
 	return strings.Repeat(" ", padding) + in + strings.Repeat(" ", padding)
+}
+
+func Whitespace(in string) string {
+	if diff := Width - len(in); diff > 0 {
+		return in + strings.Repeat(" ", diff)
+	}
+	return in
 }
