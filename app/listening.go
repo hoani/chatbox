@@ -39,6 +39,10 @@ func (c *chatbox) doStateListening() state {
 			m.Close()
 		}()
 	}()
+	// Reduced sample rate to still capture voice, but reduce latency on RPi 3B+.
+	// ChatGPT told me that human voice ranges from 80 - 2500Hz, so we want a sample rate of at least 5000Hz.
+	// Assuming our microphone is At least 40Khz, we should be ok here.
+	m.SetSampleRate(m.Format().SampleRate / 4)
 
 	v := leds.NewVisualizer(
 		leds.WithSource(&leds.Source{
