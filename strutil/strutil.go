@@ -1,6 +1,45 @@
 package strutil
 
-import "strings"
+import (
+	"strings"
+)
+
+func Simplify(input string) string {
+
+	var vowels = map[rune]struct{}{
+		'a': {}, 'e': {}, 'i': {}, 'o': {}, 'u': {},
+		'A': {}, 'E': {}, 'I': {}, 'O': {}, 'U': {},
+	}
+
+	runes := []rune(input)
+
+	trimRepeatedPrefix := func(runes []rune) []rune {
+		start := runes[0]
+		var count int
+		var r rune
+		for _, r = range runes {
+			if r != start {
+				break
+			}
+			count++
+		}
+		if count < 3 {
+			return runes
+		}
+		if _, ok := vowels[start]; ok {
+			return runes[count-2:]
+		}
+		return runes[count-1:]
+	}
+
+	index := 0
+	for index < len(runes) {
+		runes = append(runes[:index], trimRepeatedPrefix(runes[index:])...)
+		index++
+	}
+
+	return string(runes)
+}
 
 func SplitBrackets(input string) []string {
 	result := []string{}

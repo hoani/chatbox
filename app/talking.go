@@ -31,6 +31,7 @@ func (c *chatbox) doStateTalking() state {
 	c.hal.LCD().Write(lcd.Pad("[Talking]"), "", hal.LCDBlue)
 	directives := strutil.SplitBrackets(content)
 	for _, directive := range directives {
+		directive = strutil.Simplify(directive)
 		c.processDirective(directive)
 	}
 
@@ -75,7 +76,7 @@ func (c *chatbox) processSpeech(in string) {
 }
 
 func (c *chatbox) speak(sentence string) {
-	tts.Speak(sentence, tts.Config{Male: true})
+	tts.Speak(sentence, c.ttsCfg)
 }
 
 func (c *chatbox) runTalkingVisualizer(baseHsv hal.HSV) (cleanup func()) {

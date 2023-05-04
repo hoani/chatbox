@@ -6,6 +6,46 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSimplify(t *testing.T) {
+	testCases := []struct {
+		name     string
+		in       string
+		expected string
+	}{
+		{
+			name:     "empty string",
+			in:       "",
+			expected: "",
+		},
+		{
+			name:     "basic sentence",
+			in:       "hello world",
+			expected: "hello world",
+		},
+		{
+			name:     "additional letters",
+			in:       "hhhhello worlllddd",
+			expected: "hello world",
+		},
+		{
+			name:     "limit vowels to 2",
+			in:       "hhhheeeelloo worllld",
+			expected: "heelloo world",
+		},
+		{
+			name:     "limit punctuation to 1",
+			in:       "hello world!!!!!!",
+			expected: "hello world!",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.expected, Simplify(tc.in))
+		})
+	}
+}
+
 func TestSplitBrackets(t *testing.T) {
 	testCases := []struct {
 		name     string

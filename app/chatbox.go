@@ -80,6 +80,7 @@ func NewChatBox(key string) (*chatbox, error) {
 
 func (c *chatbox) Run() error {
 	c.chat = c.newChatRequest()
+	c.getGender()
 
 	for {
 		c.state = c.doState()

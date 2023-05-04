@@ -58,6 +58,7 @@ func (c *chatbox) doStateListening() state {
 				}
 				f.Close()
 				c.hal.Debug(path)
+				time.Sleep(10 * time.Millisecond)
 				c.recordingCh <- path
 			}()
 		}),

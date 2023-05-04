@@ -6,7 +6,7 @@ func getFlags(c Config) []string {
 		if c.AltVoice {
 			flags = append(flags, "-v", "m7")
 		} else {
-			flags = append(flags, "-v", "english-mb-en1", "-s", "150")
+			flags = append(flags, "-v", "english-mb-en1", "-s", "135")
 		}
 	} else {
 		if c.AltVoice {

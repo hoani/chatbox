@@ -10,9 +10,9 @@ func getFlags(c Config) []string {
 		}
 	} else {
 		if c.AltVoice {
-			flags = append(flags, "-v", "f2")
+			flags = append(flags, "-v", "m7")
 		} else {
-			flags = append(flags, "-v", "f1")
+			flags = append(flags, "-v", "f2")
 		}
 	}
 	return flags
